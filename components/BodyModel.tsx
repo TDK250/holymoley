@@ -37,8 +37,12 @@ export default function BodyModel() {
             // Apply scale directly to scene
             scene.scale.setScalar(targetScale);
 
-            // Center the model
-            scene.position.set(-center.x * targetScale, -center.y * targetScale, -center.z * targetScale);
+            // Center the model horizontally, but move up slightly on Y
+            scene.position.set(
+                -center.x * targetScale,
+                (-center.y * targetScale) + 0.4,
+                -center.z * targetScale
+            );
 
             console.log('Applied scale:', scene.scale);
             console.log('Applied position:', scene.position);

@@ -1,33 +1,44 @@
-# Mole Tracker App Tasks
+# Task: Rename App to Track-A-Mole and Prepare App Store Files
 
-- [ ] **Project Setup**
-    - [ ] Initialize Next.js project with Tailwind CSS
-    - [ ] Initialize Capacitor for Native iOS/Android wrapping
-    - [ ] Install dependencies (three, @react-three/fiber, @react-three/drei, dexie, zustand, framer-motion)
-    - [ ] Configure `manifest.json` for PWA installation features
-
-- [ ] **3D Body Interface**
-    - [ ] Set up Three.js Canvas with Mobile touch controls
-    - [ ] Implement Gender Selection state
-    - [ ] **[Input]** Check for/Load `male.glb` and `female.glb`
-    - [ ] Implement "Fallback Mannequins" (Male/Female versions)
-    - [ ] Implement Raycasting for "Mole Placement"
-    - [ ] Render "Mole Markers" on the 3D body
-
-- [ ] **Mole Management System**
-    - [ ] Design Data Model (Mole: ID, 3D Position, Label; Entry: Date, Photo, Size, Notes)
-    - [ ] Implement Store (Zustand or Context + IndexedDB for persistence)
-    - [ ] Create UI for "Add New Mole" flow
-    - [ ] Create UI for "Mole Detail" view (Graph sizes, view history)
-
-- [ ] **Camera & AR Features**
-    - [ ] Implement Camera View using `getUserMedia`
-    - [ ] Add "Reference Object" Overlay (e.g., a circle of known size) for "AR Sizing"
-    - [ ] Storage logic for images (store as Base64 in IDB for MVP, though heavy)
-
-- [ ] **Analysis & Reminders**
-    - [ ] Implement "Check Up" Reminder logic (simple frequency setting)
-    - [ ] Create "Screening" Mockup (Visual feedback on mole danger signs - ABCDE rule)
-    - [ ] Add Disclaimer Modal (Not medical advice)
-
-Most of this is done - list to be updated
+- [x] Research current app name usage and required store files <!-- id: 0 -->
+- [x] Create implementation plan <!-- id: 1 -->
+- [x] Rename application app-wide (Next.js, Capacitor, Android, iOS) <!-- id: 2 -->
+    - [x] Update package.json, capacitor.config.ts, layout.tsx <!-- id: 7 -->
+    - [x] Update Android (build.gradle, strings.xml, package renaming) <!-- id: 8 -->
+    - [x] Update iOS (Info.plist, project.pbxproj) <!-- id: 9 -->
+- [x] Prepare files for F-Droid, Google Play, and iOS App Store <!-- id: 3 -->
+    - [x] Setup Fastlane for Android and iOS <!-- id: 10 -->
+    - [x] Create metadata files (descriptions, changelogs) <!-- id: 11 -->
+    - [x] Generate/Prepare App Icons and Splash Screens <!-- id: 12 -->
+    - [x] Create F-Droid metadata <!-- id: 13 -->
+- [x] Verify changes <!-- id: 6 -->
+- [x] Comprehensive rename cleanup <!-- id: 20 -->
+    - [x] Identify all remaining "holymoley"/"Holy Moley" instances <!-- id: 21 -->
+    - [x] Update implementation plan with missed locations <!-- id: 22 -->
+    - [x] Execute total rebranding <!-- id: 23 -->
+- [x] Sync with new GitHub repository <!-- id: 14 -->
+- [x] Fix terminal blindness (redirection workaround) <!-- id: 15 -->
+- [x] Fix GitHub deployment <!-- id: 16 -->
+    - [x] Investigate .github/workflows/deploy.yml <!-- id: 17 -->
+    - [x] Resolve deployment errors <!-- id: 18 -->
+- [x] Update README.md <!-- id: 19 -->
+- [x] Update License to GPL v3 <!-- id: 24 -->
+    - [x] Explain GPL v3 implications <!-- id: 25 -->
+    - [x] Update LICENSE file <!-- id: 26 -->
+    - [x] Update package.json <!-- id: 27 -->
+    - [x] Update README.md <!-- id: 28 -->
+    - [x] Update fdroid.yml <!-- id: 29 -->
+- [x] Implement Reminder System <!-- id: 30 -->
+    - [x] Install @capacitor/local-notifications <!-- id: 31 -->
+    - [x] Update appStore with flexible scheduling state (interval, unit, target, time) <!-- id: 32 -->
+    - [x] Implement robust notification scheduling service <!-- id: 33 -->
+    - [x] Build flexible "Every X" scheduling UI in Settings <!-- id: 34 -->
+- [x] Provide Security Assurance <!-- id: 35 -->
+    - [x] Draft security explanation document <!-- id: 36 -->
+    - [x] Verify local-only data storage <!-- id: 37 -->
+- [x] Implement UI/UX Refinements <!-- id: 38 -->
+    - [x] Implement Secure Import/Export functionality <!-- id: 39 -->
+    - [x] Smooth out UI animations (reduce jumping) <!-- id: 40 -->
+    - [x] Adjust 3D model height in scene <!-- id: 41 -->
+    - [x] Integrate Security Overview into app UI <!-- id: 42 -->
+    - [x] Refine Monthly Reminders for reliability (1st Occurrence logic) <!-- id: 43 -->

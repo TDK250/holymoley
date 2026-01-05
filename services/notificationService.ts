@@ -22,50 +22,38 @@ export const NotificationService = {
         value: number,
         unit: 'days' | 'weeks' | 'months',
         target: number,
-        time: string
+        time: string,
+        occurrence: number = 0
     ) {
         await this.cancelAll();
 
         const [hour, minute] = time.split(':').map(Number);
 
-        // Base notification details
         const notification = {
             title: "Time for a Skin Check",
             body: "Keep Track-A-Mole updated by checking your moles today.",
             id: 1,
-            smallIcon: 'ic_stat_name', // Needs to be configured in Android
             schedule: {} as any,
         };
 
-        // Simplistic scheduling for now. 
-        // For 'Every X Weeks/Months' where X > 1, Capacitor's repeating logic is limited.
-        // We will schedule the immediate next occurrence and subsequent ones if possible.
-
         if (unit === 'days') {
-            // Every X Days
             notification.schedule = {
                 at: this.getNextDateForDays(value, hour, minute),
-                repeats: value === 1, // Only native repeat if daily
+                repeats: value === 1,
                 every: value === 1 ? 'day' : undefined
             };
         } else if (unit === 'weeks') {
-            // Every X Weeks on target (0-6)
             notification.schedule = {
-                on: { weekday: target + 1, hour, minute }, // Capacitor weekday is 1-7
+                on: { weekday: target + 1, hour, minute },
                 every: value === 1 ? 'week' : (value === 2 ? 'two-weeks' : undefined)
             };
             if (!notification.schedule.every) {
                 notification.schedule.at = this.getNextDateForWeeks(value, target, hour, minute);
             }
         } else if (unit === 'months') {
-            // Every X Months on target day of month (1-31)
             notification.schedule = {
-                on: { day: target, hour, minute },
-                every: value === 1 ? 'month' : undefined
+                at: this.getNextDateForOccurrenceMonths(value, occurrence, target, hour, minute)
             };
-            if (!notification.schedule.every) {
-                notification.schedule.at = this.getNextDateForMonths(value, target, hour, minute);
-            }
         }
 
         await LocalNotifications.schedule({
@@ -105,14 +93,40 @@ export const NotificationService = {
         return next;
     },
 
-    getNextDateForMonths(value: number, target: number, hour: number, minute: number): Date {
+    getNextDateForOccurrenceMonths(interval: number, occurrence: number, dayOfWeek: number, hour: number, minute: number): Date {
         const now = new Date();
-        const next = new Date();
-        next.setFullYear(now.getFullYear(), now.getMonth(), target);
-        next.setHours(hour, minute, 0, 0);
+        let targetMonth = now.getMonth();
+        let targetYear = now.getFullYear();
 
+        const calculateDate = (y: number, m: number) => {
+            const firstDayOfMonth = new Date(y, m, 1);
+            let day = (dayOfWeek - firstDayOfMonth.getDay() + 7) % 7;
+            let date: number;
+
+            if (occurrence === 4) { // Last occurrence
+                const lastDayOfMonth = new Date(y, m + 1, 0);
+                // lastDayOfMonth's day - dayOfWeek
+                let diff = lastDayOfMonth.getDay() - dayOfWeek;
+                if (diff < 0) diff += 7;
+                date = lastDayOfMonth.getDate() - diff;
+            } else {
+                date = 1 + day + (occurrence * 7);
+                // Check if date exceeded month
+                if (date > new Date(y, m + 1, 0).getDate()) {
+                    date -= 7; // Fallback to 4th if 5th doesn't exist
+                }
+            }
+            return new Date(y, m, date, hour, minute, 0, 0);
+        };
+
+        let next = calculateDate(targetYear, targetMonth);
         if (next <= now) {
-            next.setMonth(next.getMonth() + value);
+            targetMonth += interval;
+            if (targetMonth > 11) {
+                targetYear += Math.floor(targetMonth / 12);
+                targetMonth %= 12;
+            }
+            next = calculateDate(targetYear, targetMonth);
         }
         return next;
     }

@@ -17,8 +17,10 @@ export interface AppState {
     setReminderValue: (value: number) => void;
     reminderUnit: 'days' | 'weeks' | 'months';
     setReminderUnit: (unit: 'days' | 'weeks' | 'months') => void;
-    reminderTarget: number; // Day of week (0-6) or Day of month (1-31)
+    reminderTarget: number; // Day of week (0-6)
     setReminderTarget: (target: number) => void;
+    reminderOccurrence: number; // 0: 1st, 1: 2nd, 2: 3rd, 3: 4th, 4: Last
+    setReminderOccurrence: (occurrence: number) => void;
     reminderTime: string; // HH:mm
     setReminderTime: (time: string) => void;
 }
@@ -32,6 +34,7 @@ export const useAppStore = create<AppState>((set) => {
     const savedReminderValue = isClient ? parseInt(localStorage.getItem('reminder-value') || '1') : 1;
     const savedReminderUnit = isClient ? (localStorage.getItem('reminder-unit') || 'months') as 'days' | 'weeks' | 'months' : 'months';
     const savedReminderTarget = isClient ? parseInt(localStorage.getItem('reminder-target') || '1') : 1;
+    const savedReminderOccurrence = isClient ? parseInt(localStorage.getItem('reminder-occurrence') || '0') : 0;
     const savedReminderTime = isClient ? localStorage.getItem('reminder-time') || '09:00' : '09:00';
 
     return {
@@ -67,6 +70,11 @@ export const useAppStore = create<AppState>((set) => {
         setReminderTarget: (target) => {
             set({ reminderTarget: target });
             if (isClient) localStorage.setItem('reminder-target', String(target));
+        },
+        reminderOccurrence: savedReminderOccurrence,
+        setReminderOccurrence: (occurrence) => {
+            set({ reminderOccurrence: occurrence });
+            if (isClient) localStorage.setItem('reminder-occurrence', String(occurrence));
         },
         reminderTime: savedReminderTime,
         setReminderTime: (time) => {
