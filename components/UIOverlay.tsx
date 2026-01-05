@@ -1,15 +1,26 @@
 "use client";
 
 import { useAppStore, type AppState } from "@/store/appStore";
-import { Plus, X, Check, MapPin, Calendar, ChevronRight, Settings, AlertTriangle, Camera, Trash2, Edit3 } from "lucide-react";
+import { Plus, X, Check, MapPin, Calendar, ChevronRight, Settings, AlertTriangle, Camera, Trash2, Edit3, Bell, Clock } from "lucide-react";
 import { Camera as CapCamera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import { NotificationService } from "@/services/notificationService";
 
 export default function UIOverlay() {
-    const { gender, setGender, isAddingMole, setIsAddingMole, selectedMoleId, setSelectedMoleId, tempMolePosition, setTempMolePosition } = useAppStore();
+    const {
+        gender, setGender,
+        isAddingMole, setIsAddingMole,
+        selectedMoleId, setSelectedMoleId,
+        tempMolePosition, setTempMolePosition,
+        remindersEnabled, setRemindersEnabled,
+        reminderValue, setReminderValue,
+        reminderUnit, setReminderUnit,
+        reminderTarget, setReminderTarget,
+        reminderTime, setReminderTime
+    } = useAppStore();
     const [newLabel, setNewLabel] = useState("");
     const [showSettings, setShowSettings] = useState(false);
     const [showOnboarding, setShowOnboarding] = useState(false);
@@ -35,6 +46,28 @@ export default function UIOverlay() {
             setShowOnboarding(true);
         }
     }, []);
+
+    // Handle Notification Scheduling
+    useEffect(() => {
+        if (!remindersEnabled) {
+            NotificationService.cancelAll();
+            return;
+        }
+
+        const schedule = async () => {
+            const hasPermission = await NotificationService.checkPermissions();
+            if (!hasPermission) {
+                const granted = await NotificationService.requestPermissions();
+                if (!granted) {
+                    setRemindersEnabled(false);
+                    return;
+                }
+            }
+            await NotificationService.scheduleReminder(reminderValue, reminderUnit, reminderTarget, reminderTime);
+        };
+
+        schedule();
+    }, [remindersEnabled, reminderValue, reminderUnit, reminderTarget, reminderTime, setRemindersEnabled]);
 
     const handleSelectGender = (selectedGender: 'male' | 'female') => {
         setGender(selectedGender);
@@ -352,6 +385,95 @@ export default function UIOverlay() {
                                                 <span className="text-lg">{gender === 'male' ? '👨' : '👩'}</span>
                                                 <p className="font-medium capitalize text-white">{gender}</p>
                                             </div>
+                                        </div>
+
+                                        {/* Reminders Section */}
+                                        <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="flex items-center gap-2">
+                                                    <Bell className="w-4 h-4 text-rose-400" />
+                                                    <p className="font-bold text-white tracking-wide">Reminders</p>
+                                                </div>
+                                                <label className="relative inline-flex items-center cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        className="sr-only peer"
+                                                        checked={remindersEnabled}
+                                                        onChange={(e) => setRemindersEnabled(e.target.checked)}
+                                                    />
+                                                    <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                                                </label>
+                                            </div>
+
+                                            {remindersEnabled && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    className="space-y-4 pt-4 border-t border-slate-700/50 overflow-hidden"
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm text-slate-400">Every</span>
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            value={reminderValue}
+                                                            onChange={(e) => setReminderValue(Math.max(1, parseInt(e.target.value) || 1))}
+                                                            className="w-14 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-center focus:outline-none focus:border-rose-500 transition-colors"
+                                                        />
+                                                        <select
+                                                            value={reminderUnit}
+                                                            onChange={(e) => setReminderUnit(e.target.value as any)}
+                                                            className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-rose-500 transition-colors"
+                                                        >
+                                                            <option value="days">Days</option>
+                                                            <option value="weeks">Weeks</option>
+                                                            <option value="months">Months</option>
+                                                        </select>
+                                                    </div>
+
+                                                    {reminderUnit === 'weeks' && (
+                                                        <div className="flex justify-between gap-1">
+                                                            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                                                                <button
+                                                                    key={i}
+                                                                    onClick={() => setReminderTarget(i)}
+                                                                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${reminderTarget === i ? 'bg-rose-500 text-white' : 'bg-slate-900 text-slate-500 border border-slate-700'}`}
+                                                                >
+                                                                    {day}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+                                                    {reminderUnit === 'months' && (
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-sm text-slate-400">On the</span>
+                                                            <select
+                                                                value={reminderTarget}
+                                                                onChange={(e) => setReminderTarget(parseInt(e.target.value))}
+                                                                className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-rose-500 transition-colors"
+                                                            >
+                                                                {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                                                                    <option key={d} value={d}>{d}{[11, 12, 13].includes(d) ? 'th' : (d % 10 === 1 ? 'st' : (d % 10 === 2 ? 'nd' : (d % 10 === 3 ? 'rd' : 'th')))}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="flex items-center justify-between pt-2">
+                                                        <div className="flex items-center gap-2 text-slate-400">
+                                                            <Clock className="w-3.5 h-3.5" />
+                                                            <span className="text-xs font-bold uppercase tracking-wider">Time</span>
+                                                        </div>
+                                                        <input
+                                                            type="time"
+                                                            value={reminderTime}
+                                                            onChange={(e) => setReminderTime(e.target.value)}
+                                                            className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-rose-500 transition-colors"
+                                                        />
+                                                    </div>
+                                                </motion.div>
+                                            )}
                                         </div>
 
                                         <button
