@@ -9,3 +9,5 @@ dist
 .agent
 brain
 cap-browser-temp
+.gemini*
+*.txt
