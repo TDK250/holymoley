@@ -306,7 +306,7 @@ export default function UIOverlay() {
                             </div>
 
                             <div className="flex-1 overflow-y-auto space-y-6 pr-2 -mr-2">
-                                {/* Photo Selection */}
+                                {/* Photo Documentation */}
                                 <div className="space-y-4">
                                     <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Photo Documentation</p>
 
@@ -619,6 +619,171 @@ export default function UIOverlay() {
                 )}
             </AnimatePresence>
 
+            {/* Security Explanation Modal */}
+            <AnimatePresence>
+                {showSecurity && (
+                    <div className="fixed inset-0 bg-black/90 backdrop-blur-md pointer-events-auto z-[70] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl max-h-[85vh] overflow-y-auto"
+                        >
+                            <div className="flex items-center justify-between mb-6 sticky top-0 bg-slate-900 pb-2">
+                                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                                    <ShieldCheck className="w-6 h-6 text-emerald-400" />
+                                    Privacy Policy
+                                </h2>
+                                <button onClick={() => setShowSecurity(false)} className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors">
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <div className="space-y-6 text-slate-300">
+                                <section>
+                                    <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                                        <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400">1</div>
+                                        Local-Only Storage
+                                    </h3>
+                                    <p className="text-sm leading-relaxed">
+                                        All your data, including mole locations and photos, is stored exclusively on your device using IndexedDB.
+                                        Each application runs in an isolated "sandbox," meaning other apps cannot access your Track-A-Mole database.
+                                    </p>
+                                </section>
+
+                                <section>
+                                    <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                                        <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400">2</div>
+                                        No Cloud Sync
+                                    </h3>
+                                    <p className="text-sm leading-relaxed">
+                                        Track-A-Mole has no backend server and requires no account. Your health data never leaves your device,
+                                        eliminating the risk of a server-side data breach.
+                                    </p>
+                                </section>
+
+                                <section>
+                                    <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                                        <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400">3</div>
+                                        Open & Verifiable
+                                    </h3>
+                                    <p className="text-sm leading-relaxed">
+                                        The entire app is Open Source (GPL v3). You can inspect the source code to confirm there are no tracking scripts,
+                                        and monitor network traffic to verify that zero data is transmitted while you use the app.
+                                    </p>
+                                </section>
+
+                                <div className="p-4 rounded-2xl bg-slate-800/50 border border-slate-700/50 items-start gap-3 flex">
+                                    <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                                    <p className="text-xs text-slate-400 leading-normal">
+                                        Since there is no cloud backup, your data is lost if you lose your device or clear your browser data.
+                                        Use the **Export** feature in settings to create your own secure backups.
+                                    </p>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Export Password Modal */}
+            <AnimatePresence>
+                {showExportWindow && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-[70] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 20, opacity: 0 }}
+                            className="glass border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl"
+                        >
+                            <h2 className="text-xl font-bold text-white mb-2">Secure Export</h2>
+                            <p className="text-slate-400 text-sm mb-6">
+                                Create an encrypted backup. If you set a password, you will need it to restore your data.
+                            </p>
+
+                            <div className="space-y-4">
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="Optional Password"
+                                        value={exportPassword}
+                                        onChange={(e) => setExportPassword(e.target.value)}
+                                        className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-rose-500"
+                                    />
+                                    <button
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                                    >
+                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setShowExportWindow(false)}
+                                        className="flex-1 bg-slate-800 text-white py-3 rounded-xl font-medium"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleExport}
+                                        className="flex-1 bg-rose-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"
+                                    >
+                                        {exportPassword ? <Lock className="w-4 h-4" /> : <Download className="w-4 h-4" />}
+                                        Export
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Import Password Modal */}
+            <AnimatePresence>
+                {showImportWindow && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-[70] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 20, opacity: 0 }}
+                            className="glass border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl"
+                        >
+                            <h2 className="text-xl font-bold text-white mb-2">Restoring Data</h2>
+                            <p className="text-slate-400 text-sm mb-6">
+                                This encrypted backup requires a password to decrypt.
+                            </p>
+
+                            <div className="space-y-4">
+                                <input
+                                    type="password"
+                                    placeholder="Enter backup password"
+                                    value={importPassword}
+                                    onChange={(e) => setImportPassword(e.target.value)}
+                                    className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-rose-500"
+                                    autoFocus
+                                />
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => { setShowImportWindow(false); setImportPassword(""); }}
+                                        className="flex-1 bg-slate-800 text-white py-3 rounded-xl font-medium"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handlePasswordImport}
+                                        className="flex-1 bg-rose-500 text-white py-3 rounded-xl font-bold"
+                                    >
+                                        Decrypt & Restore
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
             {/* Top Bar */}
             <div
                 className="absolute top-0 left-0 right-0 p-4 pointer-events-auto z-30"
@@ -645,171 +810,6 @@ export default function UIOverlay() {
                 style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}
             >
                 <div className="max-w-xl mx-auto">
-                    {/* Security Explanation Modal */}
-                    <AnimatePresence>
-                        {showSecurity && (
-                            <div className="fixed inset-0 bg-black/90 backdrop-blur-md pointer-events-auto z-[60] flex items-center justify-center p-4">
-                                <motion.div
-                                    initial={{ scale: 0.9, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    exit={{ scale: 0.9, opacity: 0 }}
-                                    className="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl max-h-[85vh] overflow-y-auto"
-                                >
-                                    <div className="flex items-center justify-between mb-6 sticky top-0 bg-slate-900 pb-2">
-                                        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                                            <ShieldCheck className="w-6 h-6 text-emerald-400" />
-                                            Privacy Policy
-                                        </h2>
-                                        <button onClick={() => setShowSecurity(false)} className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors">
-                                            <X className="w-6 h-6" />
-                                        </button>
-                                    </div>
-
-                                    <div className="space-y-6 text-slate-300">
-                                        <section>
-                                            <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-                                                <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400">1</div>
-                                                Local-Only Storage
-                                            </h3>
-                                            <p className="text-sm leading-relaxed">
-                                                All your data, including mole locations and photos, is stored exclusively on your device using IndexedDB.
-                                                Each application runs in an isolated "sandbox," meaning other apps cannot access your Track-A-Mole database.
-                                            </p>
-                                        </section>
-
-                                        <section>
-                                            <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-                                                <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400">2</div>
-                                                No Cloud Sync
-                                            </h3>
-                                            <p className="text-sm leading-relaxed">
-                                                Track-A-Mole has no backend server and requires no account. Your health data never leaves your device,
-                                                eliminating the risk of a server-side data breach.
-                                            </p>
-                                        </section>
-
-                                        <section>
-                                            <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-                                                <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400">3</div>
-                                                Open & Verifiable
-                                            </h3>
-                                            <p className="text-sm leading-relaxed">
-                                                The entire app is Open Source (GPL v3). You can inspect the source code to confirm there are no tracking scripts,
-                                                and monitor network traffic to verify that zero data is transmitted while you use the app.
-                                            </p>
-                                        </section>
-
-                                        <div className="p-4 rounded-2xl bg-slate-800/50 border border-slate-700/50 items-start gap-3 flex">
-                                            <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                                            <p className="text-xs text-slate-400 leading-normal">
-                                                Since there is no cloud backup, your data is lost if you lose your device or clear your browser data.
-                                                Use the **Export** feature in settings to create your own secure backups.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            </div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* Export Password Modal */}
-                    <AnimatePresence>
-                        {showExportWindow && (
-                            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-[60] flex items-center justify-center p-4">
-                                <motion.div
-                                    initial={{ y: 20, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    exit={{ y: 20, opacity: 0 }}
-                                    className="glass border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl"
-                                >
-                                    <h2 className="text-xl font-bold text-white mb-2">Secure Export</h2>
-                                    <p className="text-slate-400 text-sm mb-6">
-                                        Create an encrypted backup. If you set a password, you will need it to restore your data.
-                                    </p>
-
-                                    <div className="space-y-4">
-                                        <div className="relative">
-                                            <input
-                                                type={showPassword ? "text" : "password"}
-                                                placeholder="Optional Password"
-                                                value={exportPassword}
-                                                onChange={(e) => setExportPassword(e.target.value)}
-                                                className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-rose-500"
-                                            />
-                                            <button
-                                                onClick={() => setShowPassword(!showPassword)}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
-                                            >
-                                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                            </button>
-                                        </div>
-
-                                        <div className="flex gap-3">
-                                            <button
-                                                onClick={() => setShowExportWindow(false)}
-                                                className="flex-1 bg-slate-800 text-white py-3 rounded-xl font-medium"
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                onClick={handleExport}
-                                                className="flex-1 bg-rose-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"
-                                            >
-                                                {exportPassword ? <Lock className="w-4 h-4" /> : <Download className="w-4 h-4" />}
-                                                Export
-                                            </button>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            </div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* Import Password Modal */}
-                    <AnimatePresence>
-                        {showImportWindow && (
-                            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-[60] flex items-center justify-center p-4">
-                                <motion.div
-                                    initial={{ y: 20, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    exit={{ y: 20, opacity: 0 }}
-                                    className="glass border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl"
-                                >
-                                    <h2 className="text-xl font-bold text-white mb-2">Restoring Data</h2>
-                                    <p className="text-slate-400 text-sm mb-6">
-                                        This encrypted backup requires a password to decrypt.
-                                    </p>
-
-                                    <div className="space-y-4">
-                                        <input
-                                            type="password"
-                                            placeholder="Enter backup password"
-                                            value={importPassword}
-                                            onChange={(e) => setImportPassword(e.target.value)}
-                                            className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-rose-500"
-                                            autoFocus
-                                        />
-
-                                        <div className="flex gap-3">
-                                            <button
-                                                onClick={() => { setShowImportWindow(false); setImportPassword(""); }}
-                                                className="flex-1 bg-slate-800 text-white py-3 rounded-xl font-medium"
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                onClick={handlePasswordImport}
-                                                className="flex-1 bg-rose-500 text-white py-3 rounded-xl font-bold"
-                                            >
-                                                Decrypt & Restore
-                                            </button>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            </div>
-                        )}
-                    </AnimatePresence>
-
                     <AnimatePresence mode="wait">
                         {isAddingMole ? (
                             <AddMolePanel
@@ -1043,7 +1043,14 @@ function MoleDetailPanel({
     const mole = useLiveQuery(() => selectedMoleId ? db.moles.get(selectedMoleId) : undefined, [selectedMoleId]);
     const entries = useLiveQuery(() => selectedMoleId ? db.entries.where('moleId').equals(selectedMoleId).reverse().toArray() : [], [selectedMoleId]);
 
-    if (!mole) return null;
+    const [lastMole, setLastMole] = useState<any>(null);
+
+    useEffect(() => {
+        if (mole) setLastMole(mole);
+    }, [mole]);
+
+    const activeMole = mole || lastMole;
+    if (!activeMole) return null;
 
     return (
         <motion.div
@@ -1055,7 +1062,7 @@ function MoleDetailPanel({
         >
             <div className="flex items-center justify-between mb-6">
                 <div className="flex-1">
-                    {editingMoleId === mole.id ? (
+                    {editingMoleId === activeMole.id ? (
                         <div className="flex items-center gap-2">
                             <input
                                 value={editLabel}
@@ -1063,7 +1070,7 @@ function MoleDetailPanel({
                                 className="bg-slate-800 border-b border-rose-500 text-white font-bold outline-none px-1 w-full max-w-[150px]"
                                 autoFocus
                             />
-                            <button onClick={() => onUpdateLabel(mole.id!)} className="text-green-500 p-1">
+                            <button onClick={() => onUpdateLabel(activeMole.id!)} className="text-green-500 p-1">
                                 <Check className="w-4 h-4" />
                             </button>
                             <button onClick={() => setEditingMoleId(null)} className="text-slate-500 p-1">
@@ -1072,9 +1079,9 @@ function MoleDetailPanel({
                         </div>
                     ) : (
                         <div className="flex items-center gap-2">
-                            <h2 className="text-xl font-bold text-white">{mole.label}</h2>
+                            <h2 className="text-xl font-bold text-white">{activeMole.label}</h2>
                             <button
-                                onClick={() => { setEditingMoleId(mole.id!); setEditLabel(mole.label); }}
+                                onClick={() => { setEditingMoleId(activeMole.id!); setEditLabel(activeMole.label); }}
                                 className="p-1 text-slate-500 hover:text-white"
                             >
                                 <Edit3 className="w-3.5 h-3.5" />
@@ -1084,7 +1091,7 @@ function MoleDetailPanel({
                     <div className="flex items-center gap-3 mt-1">
                         <p className="text-xs text-slate-400 flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
-                            Since {new Date(mole.createdAt).toLocaleDateString()}
+                            Since {new Date(activeMole.createdAt).toLocaleDateString()}
                         </p>
                         <span className="w-1 h-1 rounded-full bg-slate-600" />
                         <p className="text-xs text-rose-400 font-bold">
@@ -1094,7 +1101,7 @@ function MoleDetailPanel({
                 </div>
                 <div className="flex items-center gap-1">
                     <button
-                        onClick={() => onDeleteMole(mole.id!)}
+                        onClick={() => onDeleteMole(activeMole.id!)}
                         className="p-2 text-slate-500 hover:text-red-500 rounded-full hover:bg-red-500/10 transition-colors"
                         title="Delete Mole"
                     >
