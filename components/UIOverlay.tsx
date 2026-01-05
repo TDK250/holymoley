@@ -48,6 +48,8 @@ export default function UIOverlay() {
     const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
     const [editingMoleId, setEditingMoleId] = useState<number | null>(null);
     const [editLabel, setEditLabel] = useState("");
+    const [moleToDelete, setMoleToDelete] = useState<number | null>(null);
+    const [entryToDelete, setEntryToDelete] = useState<number | null>(null);
     const moles = useLiveQuery(() => db.moles.where('gender').equals(gender).toArray(), [gender]);
 
     // Check if this is first launch
@@ -175,14 +177,20 @@ export default function UIOverlay() {
         }
     };
 
-    const handleDeleteMole = async (id: number) => {
-        if (!confirm("Are you sure you want to delete this mole and all its entries?")) return;
+    const handleDeleteMole = (id: number) => {
+        setMoleToDelete(id);
+    };
+
+    const confirmDeleteMole = async () => {
+        if (!moleToDelete) return;
         try {
-            await db.moles.delete(id);
-            await db.entries.where('moleId').equals(id).delete();
+            await db.moles.delete(moleToDelete);
+            await db.entries.where('moleId').equals(moleToDelete).delete();
             setSelectedMoleId(null);
+            setMoleToDelete(null);
         } catch (error) {
             console.error("Failed to delete mole:", error);
+            setMoleToDelete(null);
         }
     };
 
@@ -197,12 +205,18 @@ export default function UIOverlay() {
         }
     };
 
-    const handleDeleteEntry = async (id: number) => {
-        if (!confirm("Delete this check-up entry?")) return;
+    const handleDeleteEntry = (id: number) => {
+        setEntryToDelete(id);
+    };
+
+    const confirmDeleteEntry = async () => {
+        if (!entryToDelete) return;
         try {
-            await db.entries.delete(id);
+            await db.entries.delete(entryToDelete);
+            setEntryToDelete(null);
         } catch (error) {
             console.error("Failed to delete entry:", error);
+            setEntryToDelete(null);
         }
     };
 
@@ -778,6 +792,150 @@ export default function UIOverlay() {
                                         Decrypt & Restore
                                     </button>
                                 </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Mole Deletion Confirmation */}
+            <AnimatePresence>
+                {moleToDelete && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[80] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-slate-900 border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center"
+                        >
+                            <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+                                <Trash2 className="w-8 h-8 text-red-500" />
+                            </div>
+                            <h2 className="text-xl font-bold mb-2 text-white">Delete Mole?</h2>
+                            <p className="text-slate-400 text-sm mb-8">
+                                This will permanently delete this mole and all its check-up history. This action cannot be undone.
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setMoleToDelete(null)}
+                                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-medium transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDeleteMole}
+                                    className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-red-500/20"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Entry Deletion Confirmation */}
+            <AnimatePresence>
+                {entryToDelete && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[80] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-slate-900 border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center"
+                        >
+                            <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+                                <AlertTriangle className="w-8 h-8 text-red-400" />
+                            </div>
+                            <h2 className="text-xl font-bold mb-2 text-white">Remove Entry?</h2>
+                            <p className="text-slate-400 text-sm mb-8">
+                                Are you sure you want to remove this check-up record?
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setEntryToDelete(null)}
+                                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-medium transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDeleteEntry}
+                                    className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-red-500/20"
+                                >
+                                    Remove
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Mole Deletion Confirmation */}
+            <AnimatePresence>
+                {moleToDelete && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[80] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-slate-900 border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center"
+                        >
+                            <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+                                <Trash2 className="w-8 h-8 text-red-500" />
+                            </div>
+                            <h2 className="text-xl font-bold mb-2 text-white">Delete Mole?</h2>
+                            <p className="text-slate-400 text-sm mb-8">
+                                This will permanently delete this mole and all its check-up history. This action cannot be undone.
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setMoleToDelete(null)}
+                                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-medium transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDeleteMole}
+                                    className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-red-500/20"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Entry Deletion Confirmation */}
+            <AnimatePresence>
+                {entryToDelete && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[80] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-slate-900 border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center"
+                        >
+                            <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+                                <AlertTriangle className="w-8 h-8 text-red-400" />
+                            </div>
+                            <h2 className="text-xl font-bold mb-2 text-white">Remove Entry?</h2>
+                            <p className="text-slate-400 text-sm mb-8">
+                                Are you sure you want to remove this check-up record?
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setEntryToDelete(null)}
+                                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-medium transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDeleteEntry}
+                                    className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-red-500/20"
+                                >
+                                    Remove
+                                </button>
                             </div>
                         </motion.div>
                     </div>
