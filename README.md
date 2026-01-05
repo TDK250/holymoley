@@ -61,4 +61,4 @@ Track-A-Mole is for personal tracking and educational purposes only. It is not a
 
 ## License
 
-This project is licensed under the ISC License. See the LICENSE file for details.
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0). See the LICENSE file for details.

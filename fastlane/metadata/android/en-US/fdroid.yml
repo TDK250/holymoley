@@ -9,7 +9,7 @@ Build:
 AutoName: Track-A-Mole
 Categories:
   - Health
-License: ISC
+License: GPL-3.0-only
 WebSite: https://github.com/TDK250/track-a-mole
 SourceCode: https://github.com/TDK250/track-a-mole
 IssueTracker: https://github.com/TDK250/track-a-mole/issues
