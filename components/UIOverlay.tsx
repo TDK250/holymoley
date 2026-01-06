@@ -5,6 +5,7 @@ import { Plus, X, Check, MapPin, Calendar, ChevronRight, Settings, AlertTriangle
 import { Camera as CapCamera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db";
+import { haptics } from "@/utils/haptics";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import { NotificationService } from "@/services/notificationService";
@@ -140,22 +141,29 @@ export default function UIOverlay() {
 
     const handleAddMole = async () => {
         if (!tempMolePosition || !newLabel) return;
-
         try {
+            await haptics.selection();
             const id = await db.moles.add({
+                x: tempMolePosition.x,
+                y: tempMolePosition.y,
+                z: tempMolePosition.z,
                 label: newLabel,
-                gender,
-                position: tempMolePosition,
                 createdAt: Date.now()
             });
+            console.log("Mole added with ID:", id);
 
-            // Comprehensive state reset
+            // Reset state
             setTempMolePosition(null);
             setNewLabel("");
             setIsAddingMole(false);
+
+            // Re-select the newly created mole immediately to show detail view
             setSelectedMoleId(id as number);
+            await haptics.success();
+
         } catch (error) {
             console.error("Failed to add mole:", error);
+            await haptics.error();
         }
     };
 
@@ -187,19 +195,23 @@ export default function UIOverlay() {
     };
 
     const handleDeleteMole = (id: number) => {
+        haptics.medium();
         setMoleToDelete(id);
     };
 
     const confirmDeleteMole = async () => {
         if (!moleToDelete) return;
         try {
+            await haptics.selection();
             await db.moles.delete(moleToDelete);
             await db.entries.where('moleId').equals(moleToDelete).delete();
             setSelectedMoleId(null);
             setMoleToDelete(null);
+            await haptics.success();
         } catch (error) {
             console.error("Failed to delete mole:", error);
             setMoleToDelete(null);
+            await haptics.error();
         }
     };
 
@@ -215,17 +227,21 @@ export default function UIOverlay() {
     };
 
     const handleDeleteEntry = (id: number) => {
+        haptics.medium();
         setEntryToDelete(id);
     };
 
     const confirmDeleteEntry = async () => {
         if (!entryToDelete) return;
         try {
+            await haptics.selection();
             await db.entries.delete(entryToDelete);
             setEntryToDelete(null);
+            await haptics.success();
         } catch (error) {
             console.error("Failed to delete entry:", error);
             setEntryToDelete(null);
+            await haptics.error();
         }
     };
 
@@ -252,6 +268,7 @@ export default function UIOverlay() {
         };
 
         try {
+            await haptics.selection();
             if (editingEntryId) {
                 await db.entries.update(editingEntryId, entryData);
             } else {
@@ -260,9 +277,11 @@ export default function UIOverlay() {
 
             resetEntryForm();
             setShowAddEntry(false);
+            await haptics.success();
         } catch (error) {
             console.error("Failed to save entry:", error);
             setShowAddEntry(false);
+            await haptics.error();
         }
     };
 

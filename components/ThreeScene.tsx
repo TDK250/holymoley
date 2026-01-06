@@ -4,6 +4,7 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { Suspense } from "react";
 import BodyModel from "./BodyModel";
+import Loader from "./Loader";
 import { useAppStore, type AppState } from "@/store/appStore";
 
 export default function ThreeScene() {
@@ -33,7 +34,7 @@ export default function ThreeScene() {
                 <directionalLight position={[-3, 2, -3]} intensity={0.6} />
                 <directionalLight position={[0, 3, -5]} intensity={0.4} color="#4f46e5" />
 
-                <Suspense fallback={null}>
+                <Suspense fallback={<Loader />}>
                     <BodyModel />
                 </Suspense>
             </Canvas>
