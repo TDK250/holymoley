@@ -144,10 +144,9 @@ export default function UIOverlay() {
         try {
             await haptics.selection();
             const id = await db.moles.add({
-                x: tempMolePosition.x,
-                y: tempMolePosition.y,
-                z: tempMolePosition.z,
                 label: newLabel,
+                gender,
+                position: tempMolePosition,
                 createdAt: Date.now()
             });
             console.log("Mole added with ID:", id);
@@ -292,10 +291,11 @@ export default function UIOverlay() {
                 {showOnboarding && (
                     <div className="fixed inset-0 bg-black/95 backdrop-blur-md pointer-events-auto z-50 flex items-center justify-center p-4">
                         <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
+                            initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-slate-900 border border-slate-700 rounded-3xl p-8 max-w-md w-full shadow-2xl"
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            transition={{ duration: 0.15, ease: "easeOut" }}
+                            className="glass rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-white/10"
                         >
                             <h2 className="text-3xl font-bold mb-3 text-white">Welcome</h2>
                             <p className="text-slate-400 mb-8 leading-relaxed">
@@ -328,9 +328,10 @@ export default function UIOverlay() {
                 {showAddEntry && (
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-50 flex items-end sm:items-center justify-center p-4">
                         <motion.div
-                            initial={{ y: 100, opacity: 0 }}
+                            initial={{ y: 20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: 100, opacity: 0 }}
+                            exit={{ y: 20, opacity: 0 }}
+                            transition={{ duration: 0.2, ease: "easeOut" }}
                             className="glass rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-white/10 overflow-hidden flex flex-col max-h-[90vh]"
                         >
                             <div className="flex items-center justify-between mb-6">
@@ -456,9 +457,10 @@ export default function UIOverlay() {
                         onClick={() => !showResetConfirm && setShowSettings(false)}
                     >
                         <motion.div
-                            initial={{ y: 50, opacity: 0 }}
+                            initial={{ y: 20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: 50, opacity: 0 }}
+                            exit={{ y: 20, opacity: 0 }}
+                            transition={{ duration: 0.2, ease: "easeOut" }}
                             className="glass rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-700/50 bg-slate-900/90"
                             onClick={(e) => e.stopPropagation()}
                         >
@@ -667,9 +669,10 @@ export default function UIOverlay() {
                 {showSecurity && (
                     <div className="fixed inset-0 bg-black/90 backdrop-blur-md pointer-events-auto z-[70] flex items-center justify-center p-4">
                         <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
+                            initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            transition={{ duration: 0.15, ease: "easeOut" }}
                             className="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl max-h-[85vh] overflow-y-auto"
                         >
                             <div className="flex items-center justify-between mb-6 sticky top-0 bg-slate-900 pb-2">
@@ -832,9 +835,10 @@ export default function UIOverlay() {
                 {moleToDelete && (
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[80] flex items-center justify-center p-4">
                         <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
+                            initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            transition={{ duration: 0.15, ease: "easeOut" }}
                             className="bg-slate-900 border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center"
                         >
                             <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
@@ -868,9 +872,10 @@ export default function UIOverlay() {
                 {entryToDelete && (
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[80] flex items-center justify-center p-4">
                         <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
+                            initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            transition={{ duration: 0.15, ease: "easeOut" }}
                             className="bg-slate-900 border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center"
                         >
                             <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
@@ -904,9 +909,10 @@ export default function UIOverlay() {
                 {moleToDelete && (
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[80] flex items-center justify-center p-4">
                         <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
+                            initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            transition={{ duration: 0.15, ease: "easeOut" }}
                             className="bg-slate-900 border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center"
                         >
                             <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
@@ -940,9 +946,10 @@ export default function UIOverlay() {
                 {entryToDelete && (
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[80] flex items-center justify-center p-4">
                         <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
+                            initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            transition={{ duration: 0.15, ease: "easeOut" }}
                             className="bg-slate-900 border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center"
                         >
                             <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
@@ -1036,10 +1043,10 @@ function MoleListPanel({ moles }: { moles: any[] | undefined }) {
 
     return (
         <motion.div
-            initial={{ y: "100%", opacity: 0 }}
+            initial={{ y: "15%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: "100%", opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            exit={{ y: "15%", opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className="glass rounded-3xl p-6 max-h-[50vh] flex flex-col border-t border-white/10 shadow-2xl bg-slate-900/80 pointer-events-auto w-full"
         >
             <div className="flex items-center justify-between mb-4">
@@ -1125,10 +1132,10 @@ function AddMolePanel({ onSave, label, setLabel }: { onSave: () => void, label: 
 
     return (
         <motion.div
-            initial={{ y: "100%", opacity: 0 }}
+            initial={{ y: "15%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: "100%", opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            exit={{ y: "15%", opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className="glass rounded-3xl p-6 border-t border-rose-500/20 shadow-2xl bg-slate-900/90 pointer-events-auto w-full"
         >
             <div className="flex items-center justify-between mb-6">
@@ -1244,10 +1251,10 @@ function MoleDetailPanel({
 
     return (
         <motion.div
-            initial={{ y: "100%", opacity: 0 }}
+            initial={{ y: "15%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: "100%", opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            exit={{ y: "15%", opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className="glass rounded-3xl p-6 max-h-[70vh] flex flex-col border-t border-white/10 shadow-2xl bg-slate-900/90 pointer-events-auto w-full"
         >
             <div className="flex items-center justify-between mb-6">
