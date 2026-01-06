@@ -11,8 +11,8 @@ export const metadata: Metadata = {
     title: "Track-A-Mole",
     description: "Track and monitor your skin health in 3D",
     icons: {
-        icon: `${basePath}/Icon/bitmap.png`,
-        apple: `${basePath}/Icon/bitmap.png`,
+        icon: `${basePath}/logo.png`,
+        apple: `${basePath}/apple-touch-icon.png`,
     }
 };
 

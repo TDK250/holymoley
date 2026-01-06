@@ -39,20 +39,44 @@ export const ImportExportService = {
 
             if (file.name.endsWith('.tam')) {
                 if (!password) throw new Error("Password required for encrypted backup");
-                const decryptedStr = await this.decrypt(buffer, password);
-                jsonData = JSON.parse(decryptedStr);
-            } else {
+                try {
+                    const decryptedStr = await this.decrypt(buffer, password);
+                    jsonData = JSON.parse(decryptedStr);
+                } catch (error) {
+                    throw new Error("Failed to decrypt backup. Check your password and try again.");
+                }
+            } else if (file.name.endsWith('.json')) {
                 const decoder = new TextDecoder();
-                jsonData = JSON.parse(decoder.decode(buffer));
+                try {
+                    jsonData = JSON.parse(decoder.decode(buffer));
+                } catch (error) {
+                    throw new Error("Invalid JSON format in backup file");
+                }
+            } else {
+                throw new Error("Unsupported file format. Please use .json or .tam files.");
             }
 
-            if (!jsonData.moles || !jsonData.entries) throw new Error("Invalid backup format");
+            // Validate backup structure
+            if (!jsonData || typeof jsonData !== 'object') {
+                throw new Error("Invalid backup format: not a valid object");
+            }
+            if (!Array.isArray(jsonData.moles) || !Array.isArray(jsonData.entries)) {
+                throw new Error("Invalid backup format: missing moles or entries data");
+            }
+            if (jsonData.version && jsonData.version > 1) {
+                throw new Error("This backup was created with a newer version of Track-A-Mole. Please update the app.");
+            }
 
             // Clear and repopulate
             await db.moles.clear();
             await db.entries.clear();
-            await db.moles.bulkAdd(jsonData.moles);
-            await db.entries.bulkAdd(jsonData.entries);
+
+            if (jsonData.moles.length > 0) {
+                await db.moles.bulkAdd(jsonData.moles);
+            }
+            if (jsonData.entries.length > 0) {
+                await db.entries.bulkAdd(jsonData.entries);
+            }
 
             return true;
         } catch (error) {

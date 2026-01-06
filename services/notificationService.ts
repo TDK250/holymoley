@@ -25,40 +25,50 @@ export const NotificationService = {
         time: string,
         occurrence: number = 0
     ) {
-        await this.cancelAll();
+        try {
+            await this.cancelAll();
 
-        const [hour, minute] = time.split(':').map(Number);
+            const [hour, minute] = time.split(':').map(Number);
 
-        const notification = {
-            title: "Time for a Skin Check",
-            body: "Keep Track-A-Mole updated by checking your moles today.",
-            id: 1,
-            schedule: {} as any,
-        };
-
-        if (unit === 'days') {
-            notification.schedule = {
-                at: this.getNextDateForDays(value, hour, minute),
-                repeats: value === 1,
-                every: value === 1 ? 'day' : undefined
+            const notification = {
+                title: "Time for a Skin Check",
+                body: "Keep Track-A-Mole updated by checking your moles today.",
+                id: 1,
+                schedule: {} as any,
+                smallIcon: 'ic_notification',
+                sound: undefined,
+                attachments: undefined,
+                actionTypeId: "",
+                extra: null
             };
-        } else if (unit === 'weeks') {
-            notification.schedule = {
-                on: { weekday: target + 1, hour, minute },
-                every: value === 1 ? 'week' : (value === 2 ? 'two-weeks' : undefined)
-            };
-            if (!notification.schedule.every) {
-                notification.schedule.at = this.getNextDateForWeeks(value, target, hour, minute);
+
+            if (unit === 'days') {
+                notification.schedule = {
+                    at: this.getNextDateForDays(value, hour, minute),
+                    repeats: value === 1,
+                    every: value === 1 ? 'day' : undefined
+                };
+            } else if (unit === 'weeks') {
+                notification.schedule = {
+                    on: { weekday: target + 1, hour, minute },
+                    every: value === 1 ? 'week' : (value === 2 ? 'two-weeks' : undefined)
+                };
+                if (!notification.schedule.every) {
+                    notification.schedule.at = this.getNextDateForWeeks(value, target, hour, minute);
+                }
+            } else if (unit === 'months') {
+                notification.schedule = {
+                    at: this.getNextDateForOccurrenceMonths(value, occurrence, target, hour, minute)
+                };
             }
-        } else if (unit === 'months') {
-            notification.schedule = {
-                at: this.getNextDateForOccurrenceMonths(value, occurrence, target, hour, minute)
-            };
-        }
 
-        await LocalNotifications.schedule({
-            notifications: [notification]
-        });
+            await LocalNotifications.schedule({
+                notifications: [notification]
+            });
+        } catch (error) {
+            console.error('Failed to schedule notification:', error);
+            throw error;
+        }
     },
 
     getNextDateForDays(value: number, hour: number, minute: number): Date {

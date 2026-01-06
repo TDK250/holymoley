@@ -6,7 +6,7 @@ import { Camera as CapCamera, CameraResultType, CameraSource } from "@capacitor/
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db";
 import { haptics } from "@/utils/haptics";
-import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+
 import { useState, useEffect, useRef } from "react";
 import { NotificationService } from "@/services/notificationService";
 import { ImportExportService } from "@/services/importExportService";
@@ -287,696 +287,566 @@ export default function UIOverlay() {
     return (
         <div className="fixed inset-0 pointer-events-none z-10">
             {/* Onboarding Modal */}
-            <AnimatePresence>
-                {showOnboarding && (
-                    <div className="fixed inset-0 bg-black/95 backdrop-blur-md pointer-events-auto z-50 flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            transition={{ duration: 0.15, ease: "easeOut" }}
-                            className="glass rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-white/10"
-                        >
-                            <h2 className="text-3xl font-bold mb-3 text-white">Welcome</h2>
-                            <p className="text-slate-400 mb-8 leading-relaxed">
-                                Select your body type to get started. This will be your base model for tracking.
-                            </p>
+            {showOnboarding && (
+                <div className="fixed inset-0 bg-black/95 backdrop-blur-md pointer-events-auto z-50 flex items-center justify-center p-4">
+                    <div className="glass rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-white/10 animate-fade-in">
+                        <h2 className="text-3xl font-bold mb-3 text-white">Welcome</h2>
+                        <p className="text-slate-400 mb-8 leading-relaxed">
+                            Select your body type to get started. This will be your base model for tracking.
+                        </p>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <button
-                                    onClick={() => handleSelectGender('female')}
-                                    className="bg-slate-800 hover:bg-rose-500 hover:border-rose-400 border-2 border-slate-700 text-white py-6 rounded-2xl font-bold transition-all flex flex-col items-center gap-2 group"
-                                >
-                                    <span className="text-2xl group-hover:scale-110 transition-transform">👩</span>
-                                    Female
-                                </button>
-                                <button
-                                    onClick={() => handleSelectGender('male')}
-                                    className="bg-slate-800 hover:bg-blue-500 hover:border-blue-400 border-2 border-slate-700 text-white py-6 rounded-2xl font-bold transition-all flex flex-col items-center gap-2 group"
-                                >
-                                    <span className="text-2xl group-hover:scale-110 transition-transform">👨</span>
-                                    Male
-                                </button>
-                            </div>
-                        </motion.div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <button
+                                onClick={() => handleSelectGender('female')}
+                                className="bg-slate-800 hover:bg-rose-500 hover:border-rose-400 border-2 border-slate-700 text-white py-6 rounded-2xl font-bold transition-all flex flex-col items-center gap-2 group"
+                            >
+                                <span className="text-2xl group-hover:scale-110 transition-transform">👩</span>
+                                Female
+                            </button>
+                            <button
+                                onClick={() => handleSelectGender('male')}
+                                className="bg-slate-800 hover:bg-blue-500 hover:border-blue-400 border-2 border-slate-700 text-white py-6 rounded-2xl font-bold transition-all flex flex-col items-center gap-2 group"
+                            >
+                                <span className="text-2xl group-hover:scale-110 transition-transform">👨</span>
+                                Male
+                            </button>
+                        </div>
                     </div>
-                )}
-            </AnimatePresence>
+                </div>
+            )}
 
             {/* Add Entry Modal */}
-            <AnimatePresence>
-                {showAddEntry && (
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-50 flex items-end sm:items-center justify-center p-4">
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: 20, opacity: 0 }}
-                            transition={{ duration: 0.2, ease: "easeOut" }}
-                            className="glass rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-white/10 overflow-hidden flex flex-col max-h-[90vh]"
-                        >
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className="text-xl font-bold text-white">
-                                    {editingEntryId ? 'Update Check-up' : 'New Check-up'}
-                                </h2>
-                                <button
-                                    onClick={() => {
-                                        setShowAddEntry(false);
-                                        resetEntryForm();
-                                    }}
-                                    className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
+            {showAddEntry && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-50 flex items-end sm:items-center justify-center p-4">
+                    <div className="glass rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-white/10 overflow-hidden flex flex-col max-h-[90vh] animate-slide-up">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-bold text-white">
+                                {editingEntryId ? 'Update Check-up' : 'New Check-up'}
+                            </h2>
+                            <button
+                                onClick={() => {
+                                    setShowAddEntry(false);
+                                    resetEntryForm();
+                                }}
+                                className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto space-y-6 pr-2 -mr-2">
+                            {/* Photo Documentation */}
+                            <div className="space-y-4">
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Photo Documentation</p>
+
+                                {entryPhoto ? (
+                                    <div className="relative group rounded-2xl overflow-hidden border border-white/10 shadow-xl bg-slate-800/30">
+                                        <img src={entryPhoto} alt="Mole preview" className="w-full aspect-video object-cover" />
+                                        <button
+                                            onClick={() => setEntryPhoto(null)}
+                                            className="absolute top-3 right-3 p-2 bg-red-500/80 text-white rounded-full hover:bg-red-500 transition-colors backdrop-blur-sm shadow-lg"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <button
+                                            onClick={() => handleEntryPhotoUpload(CameraSource.Camera)}
+                                            className="flex flex-col items-center justify-center p-6 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-rose-500/30 transition-all group/cam"
+                                        >
+                                            <div className="w-12 h-12 rounded-full bg-rose-500/20 flex items-center justify-center text-rose-400 mb-3 group-hover/cam:scale-110 transition-transform">
+                                                <Camera className="w-6 h-6" />
+                                            </div>
+                                            <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Camera</span>
+                                        </button>
+                                        <button
+                                            onClick={() => handleEntryPhotoUpload(CameraSource.Photos)}
+                                            className="flex flex-col items-center justify-center p-6 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-blue-500/30 transition-all group/gal"
+                                        >
+                                            <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 mb-3 group-hover/gal:scale-110 transition-transform">
+                                                <MapPin className="w-6 h-6 rotate-45" />
+                                            </div>
+                                            <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Gallery</span>
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="flex-1 overflow-y-auto space-y-6 pr-2 -mr-2">
-                                {/* Photo Documentation */}
-                                <div className="space-y-4">
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Photo Documentation</p>
-
-                                    {entryPhoto ? (
-                                        <div className="relative group rounded-2xl overflow-hidden border border-white/10 shadow-xl bg-slate-800/30">
-                                            <img src={entryPhoto} alt="Mole preview" className="w-full aspect-video object-cover" />
-                                            <button
-                                                onClick={() => setEntryPhoto(null)}
-                                                className="absolute top-3 right-3 p-2 bg-red-500/80 text-white rounded-full hover:bg-red-500 transition-colors backdrop-blur-sm shadow-lg"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <button
-                                                onClick={() => handleEntryPhotoUpload(CameraSource.Camera)}
-                                                className="flex flex-col items-center justify-center p-6 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-rose-500/30 transition-all group/cam"
-                                            >
-                                                <div className="w-12 h-12 rounded-full bg-rose-500/20 flex items-center justify-center text-rose-400 mb-3 group-hover/cam:scale-110 transition-transform">
-                                                    <Camera className="w-6 h-6" />
-                                                </div>
-                                                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Camera</span>
-                                            </button>
-                                            <button
-                                                onClick={() => handleEntryPhotoUpload(CameraSource.Photos)}
-                                                className="flex flex-col items-center justify-center p-6 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-blue-500/30 transition-all group/gal"
-                                            >
-                                                <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 mb-3 group-hover/gal:scale-110 transition-transform">
-                                                    <MapPin className="w-6 h-6 rotate-45" />
-                                                </div>
-                                                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Gallery</span>
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    {/* Date */}
-                                    <div className="space-y-2">
-                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Date</p>
-                                        <input
-                                            type="date"
-                                            value={entryDate}
-                                            onChange={(e) => setEntryDate(e.target.value)}
-                                            className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
-                                        />
-                                    </div>
-                                    {/* Size */}
-                                    <div className="space-y-2">
-                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Size (mm)</p>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            placeholder="e.g. 5"
-                                            value={entrySize}
-                                            onChange={(e) => setEntrySize(e.target.value)}
-                                            className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Texture */}
+                            <div className="grid grid-cols-2 gap-4">
+                                {/* Date */}
                                 <div className="space-y-2">
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Texture / Appearance</p>
+                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Date</p>
                                     <input
-                                        type="text"
-                                        placeholder="e.g. Smooth, Raised, Rough..."
-                                        value={entryTexture}
-                                        onChange={(e) => setEntryTexture(e.target.value)}
+                                        type="date"
+                                        value={entryDate}
+                                        onChange={(e) => setEntryDate(e.target.value)}
                                         className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
                                     />
                                 </div>
-
-                                {/* Notes */}
+                                {/* Size */}
                                 <div className="space-y-2">
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Notes</p>
-                                    <textarea
-                                        placeholder="Add any specific observations..."
-                                        rows={3}
-                                        value={entryNotes}
-                                        onChange={(e) => setEntryNotes(e.target.value)}
-                                        className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50 resize-none"
-                                    ></textarea>
+                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Size (mm)</p>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        placeholder="e.g. 5"
+                                        value={entrySize}
+                                        onChange={(e) => setEntrySize(e.target.value)}
+                                        className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+                                    />
                                 </div>
                             </div>
 
-                            <button
-                                onClick={handleSaveEntry}
-                                className="w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-xl font-bold transition-all shadow-lg shadow-rose-500/20 mt-6 active:scale-[0.98]"
-                            >
-                                {editingEntryId ? 'Update Entry' : 'Save Entry'}
-                            </button>
-                        </motion.div>
+                            {/* Texture */}
+                            <div className="space-y-2">
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Texture / Appearance</p>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. Smooth, Raised, Rough..."
+                                    value={entryTexture}
+                                    onChange={(e) => setEntryTexture(e.target.value)}
+                                    className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+                                />
+                            </div>
+
+                            {/* Notes */}
+                            <div className="space-y-2">
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Notes</p>
+                                <textarea
+                                    placeholder="Add any specific observations..."
+                                    rows={3}
+                                    value={entryNotes}
+                                    onChange={(e) => setEntryNotes(e.target.value)}
+                                    className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50 resize-none"
+                                ></textarea>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={handleSaveEntry}
+                            className="w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-xl font-bold transition-all shadow-lg shadow-rose-500/20 mt-6 active:scale-[0.98]"
+                        >
+                            {editingEntryId ? 'Update Entry' : 'Save Entry'}
+                        </button>
                     </div>
-                )}
-            </AnimatePresence>
+                </div>
+            )}
 
             {/* Settings Panel */}
-            <AnimatePresence>
-                {showSettings && (
+            {showSettings && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto z-40 flex items-center justify-center p-4 fade-in"
+                    onClick={() => !showResetConfirm && setShowSettings(false)}
+                >
                     <div
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto z-40 flex items-center justify-center p-4"
-                        onClick={() => !showResetConfirm && setShowSettings(false)}
+                        className="glass rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-700/50 bg-slate-900/90 animate-fade-in"
+                        onClick={(e) => e.stopPropagation()}
                     >
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: 20, opacity: 0 }}
-                            transition={{ duration: 0.2, ease: "easeOut" }}
-                            className="glass rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-700/50 bg-slate-900/90"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            {!showResetConfirm ? (
-                                <>
-                                    <div className="flex items-center justify-between mb-6">
-                                        <h2 className="text-xl font-bold text-white">Settings</h2>
-                                        <button onClick={() => setShowSettings(false)} className="p-2 -mr-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors">
-                                            <X className="w-5 h-5" />
-                                        </button>
+                        {!showResetConfirm ? (
+                            <>
+                                <div className="flex items-center justify-between mb-6">
+                                    <h2 className="text-xl font-bold text-white">Settings</h2>
+                                    <button onClick={() => setShowSettings(false)} className="p-2 -mr-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors">
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
+                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Current Model</p>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-lg">{gender === 'male' ? '👨' : '👩'}</span>
+                                            <p className="font-medium capitalize text-white">{gender}</p>
+                                        </div>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
-                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Current Model</p>
+                                    {/* Reminders Section */}
+                                    <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
+                                        <div className="flex items-center justify-between mb-4">
                                             <div className="flex items-center gap-2">
-                                                <span className="text-lg">{gender === 'male' ? '👨' : '👩'}</span>
-                                                <p className="font-medium capitalize text-white">{gender}</p>
+                                                <Bell className="w-4 h-4 text-rose-400" />
+                                                <p className="font-bold text-white tracking-wide">Reminders</p>
                                             </div>
+                                            <label className="relative inline-flex items-center cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    className="sr-only peer"
+                                                    checked={remindersEnabled}
+                                                    onChange={(e) => setRemindersEnabled(e.target.checked)}
+                                                />
+                                                <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                                            </label>
                                         </div>
 
-                                        {/* Reminders Section */}
-                                        <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
-                                            <div className="flex items-center justify-between mb-4">
-                                                <div className="flex items-center gap-2">
-                                                    <Bell className="w-4 h-4 text-rose-400" />
-                                                    <p className="font-bold text-white tracking-wide">Reminders</p>
-                                                </div>
-                                                <label className="relative inline-flex items-center cursor-pointer">
-                                                    <input
-                                                        type="checkbox"
-                                                        className="sr-only peer"
-                                                        checked={remindersEnabled}
-                                                        onChange={(e) => setRemindersEnabled(e.target.checked)}
-                                                    />
-                                                    <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
-                                                </label>
-                                            </div>
-
-                                            {remindersEnabled && (
-                                                <motion.div
-                                                    initial={{ height: 0, opacity: 0 }}
-                                                    animate={{ height: 'auto', opacity: 1 }}
-                                                    className="space-y-4 pt-4 border-t border-slate-700/50 overflow-hidden"
-                                                >
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm text-slate-400">Every</span>
-                                                        <input
-                                                            type="number"
-                                                            min="1"
-                                                            value={reminderValue}
-                                                            onChange={(e) => setReminderValue(Math.max(1, parseInt(e.target.value) || 1))}
-                                                            className="w-14 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-center focus:outline-none focus:border-rose-500 transition-colors"
-                                                        />
-                                                        <select
-                                                            value={reminderUnit}
-                                                            onChange={(e) => setReminderUnit(e.target.value as any)}
-                                                            className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-rose-500 transition-colors"
-                                                        >
-                                                            <option value="days">Days</option>
-                                                            <option value="weeks">Weeks</option>
-                                                            <option value="months">Months</option>
-                                                        </select>
-                                                    </div>
-
-                                                    {reminderUnit === 'weeks' && (
-                                                        <div className="flex justify-between gap-1">
-                                                            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                                                                <button
-                                                                    key={i}
-                                                                    onClick={() => setReminderTarget(i)}
-                                                                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${reminderTarget === i ? 'bg-rose-500 text-white' : 'bg-slate-900 text-slate-500 border border-slate-700'}`}
-                                                                >
-                                                                    {day}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    )}
-
-                                                    {reminderUnit === 'months' && (
-                                                        <div className="space-y-3">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-sm text-slate-400">On the</span>
-                                                                <select
-                                                                    value={reminderOccurrence}
-                                                                    onChange={(e) => setReminderOccurrence(parseInt(e.target.value))}
-                                                                    className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-rose-500 transition-colors"
-                                                                >
-                                                                    <option value={0}>1st</option>
-                                                                    <option value={1}>2nd</option>
-                                                                    <option value={2}>3rd</option>
-                                                                    <option value={3}>4th</option>
-                                                                    <option value={4}>Last</option>
-                                                                </select>
-                                                                <select
-                                                                    value={reminderTarget}
-                                                                    onChange={(e) => setReminderTarget(parseInt(e.target.value))}
-                                                                    className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-rose-500 transition-colors"
-                                                                >
-                                                                    {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((d, i) => (
-                                                                        <option key={i} value={i}>{d}</option>
-                                                                    ))}
-                                                                </select>
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    <div className="flex items-center justify-between pt-2">
-                                                        <div className="flex items-center gap-2 text-slate-400">
-                                                            <Clock className="w-3.5 h-3.5" />
-                                                            <span className="text-xs font-bold uppercase tracking-wider">Time</span>
-                                                        </div>
-                                                        <input
-                                                            type="time"
-                                                            value={reminderTime}
-                                                            onChange={(e) => setReminderTime(e.target.value)}
-                                                            className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-rose-500 transition-colors"
-                                                        />
-                                                    </div>
-                                                </motion.div>
-                                            )}
-                                        </div>
-
-                                        {/* Security & Data Section */}
-                                        <div className="space-y-2">
-                                            <button
-                                                onClick={() => setShowSecurity(true)}
-                                                className="w-full p-4 rounded-xl bg-slate-800/50 border border-slate-700 hover:bg-slate-800 transition-colors flex items-center justify-between group"
+                                        {remindersEnabled && (
+                                            <div
+                                                className="space-y-4 pt-4 border-t border-slate-700/50 overflow-hidden"
                                             >
                                                 <div className="flex items-center gap-2">
-                                                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                                                    <span className="text-sm font-bold text-white tracking-wide">Security & Privacy</span>
+                                                    <span className="text-sm text-slate-400">Every</span>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        value={reminderValue}
+                                                        onChange={(e) => setReminderValue(Math.max(1, parseInt(e.target.value) || 1))}
+                                                        className="w-14 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-center focus:outline-none focus:border-rose-500 transition-colors"
+                                                    />
+                                                    <select
+                                                        value={reminderUnit}
+                                                        onChange={(e) => setReminderUnit(e.target.value as any)}
+                                                        className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-rose-500 transition-colors"
+                                                    >
+                                                        <option value="days">Days</option>
+                                                        <option value="weeks">Weeks</option>
+                                                        <option value="months">Months</option>
+                                                    </select>
                                                 </div>
-                                                <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white transition-colors" />
-                                            </button>
 
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <button
-                                                    onClick={() => setShowExportWindow(true)}
-                                                    className="p-3 rounded-xl bg-slate-800/50 border border-slate-700 hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 py-4"
-                                                >
-                                                    <Download className="w-4 h-4 text-blue-400" />
-                                                    <span className="text-xs font-bold text-white uppercase tracking-wider">Export</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => fileInputRef.current?.click()}
-                                                    className="p-3 rounded-xl bg-slate-800/50 border border-slate-700 hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 py-4"
-                                                >
-                                                    <Upload className="w-4 h-4 text-purple-400" />
-                                                    <span className="text-xs font-bold text-white uppercase tracking-wider">Import</span>
-                                                </button>
-                                                <input
-                                                    type="file"
-                                                    ref={fileInputRef}
-                                                    className="hidden"
-                                                    accept=".json,.tam"
-                                                    onChange={handleImportFile}
-                                                />
+                                                {reminderUnit === 'weeks' && (
+                                                    <div className="flex justify-between gap-1">
+                                                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                                                            <button
+                                                                key={i}
+                                                                onClick={() => setReminderTarget(i)}
+                                                                className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${reminderTarget === i ? 'bg-rose-500 text-white' : 'bg-slate-900 text-slate-500 border border-slate-700'}`}
+                                                            >
+                                                                {day}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {reminderUnit === 'months' && (
+                                                    <div className="space-y-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-sm text-slate-400">On the</span>
+                                                            <select
+                                                                value={reminderOccurrence}
+                                                                onChange={(e) => setReminderOccurrence(parseInt(e.target.value))}
+                                                                className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-rose-500 transition-colors"
+                                                            >
+                                                                <option value={0}>1st</option>
+                                                                <option value={1}>2nd</option>
+                                                                <option value={2}>3rd</option>
+                                                                <option value={3}>4th</option>
+                                                                <option value={4}>Last</option>
+                                                            </select>
+                                                            <select
+                                                                value={reminderTarget}
+                                                                onChange={(e) => setReminderTarget(parseInt(e.target.value))}
+                                                                className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-rose-500 transition-colors"
+                                                            >
+                                                                {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((d, i) => (
+                                                                    <option key={i} value={i}>{d}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <div className="flex items-center justify-between pt-2">
+                                                    <div className="flex items-center gap-2 text-slate-400">
+                                                        <Clock className="w-3.5 h-3.5" />
+                                                        <span className="text-xs font-bold uppercase tracking-wider">Time</span>
+                                                    </div>
+                                                    <input
+                                                        type="time"
+                                                        value={reminderTime}
+                                                        onChange={(e) => setReminderTime(e.target.value)}
+                                                        className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-rose-500 transition-colors"
+                                                    />
+                                                </div>
                                             </div>
-                                        </div>
-
-                                        <button
-                                            onClick={() => setShowResetConfirm(true)}
-                                            className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 py-4 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 group"
-                                        >
-                                            <AlertTriangle className="w-4 h-4 group-hover:animate-pulse" />
-                                            Reset All Data
-                                        </button>
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="text-center mb-6">
-                                        <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4 animate-bounce">
-                                            <AlertTriangle className="w-8 h-8 text-red-500" />
-                                        </div>
-                                        <h2 className="text-xl font-bold mb-2 text-white">Are you sure?</h2>
-                                        <p className="text-slate-400 text-sm">
-                                            This will permanently delete all your tracked moles, photos, and history. You won't be able to undo this.
-                                        </p>
+                                        )}
                                     </div>
 
-                                    <div className="flex gap-3">
+                                    {/* Security & Data Section */}
+                                    <div className="space-y-2">
                                         <button
-                                            onClick={() => setShowResetConfirm(false)}
-                                            className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-medium transition-colors"
+                                            onClick={() => setShowSecurity(true)}
+                                            className="w-full p-4 rounded-xl bg-slate-800/50 border border-slate-700 hover:bg-slate-800 transition-colors flex items-center justify-between group"
                                         >
-                                            Cancel
+                                            <div className="flex items-center gap-2">
+                                                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                                                <span className="text-sm font-bold text-white tracking-wide">Security & Privacy</span>
+                                            </div>
+                                            <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white transition-colors" />
                                         </button>
-                                        <button
-                                            onClick={handleResetData}
-                                            className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-medium transition-colors shadow-lg shadow-red-500/20"
-                                        >
-                                            Yes, Reset
-                                        </button>
+
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <button
+                                                onClick={() => setShowExportWindow(true)}
+                                                className="p-3 rounded-xl bg-slate-800/50 border border-slate-700 hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 py-4"
+                                            >
+                                                <Download className="w-4 h-4 text-blue-400" />
+                                                <span className="text-xs font-bold text-white uppercase tracking-wider">Export</span>
+                                            </button>
+                                            <button
+                                                onClick={() => fileInputRef.current?.click()}
+                                                className="p-3 rounded-xl bg-slate-800/50 border border-slate-700 hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 py-4"
+                                            >
+                                                <Upload className="w-4 h-4 text-purple-400" />
+                                                <span className="text-xs font-bold text-white uppercase tracking-wider">Import</span>
+                                            </button>
+                                            <input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                className="hidden"
+                                                accept=".json,.tam"
+                                                onChange={handleImportFile}
+                                            />
+                                        </div>
                                     </div>
-                                </>
-                            )}
-                        </motion.div>
+
+                                    <button
+                                        onClick={() => setShowResetConfirm(true)}
+                                        className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 py-4 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 group"
+                                    >
+                                        <AlertTriangle className="w-4 h-4 group-hover:animate-pulse" />
+                                        Reset All Data
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="text-center mb-6">
+                                    <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4 animate-bounce">
+                                        <AlertTriangle className="w-8 h-8 text-red-500" />
+                                    </div>
+                                    <h2 className="text-xl font-bold mb-2 text-white">Are you sure?</h2>
+                                    <p className="text-slate-400 text-sm">
+                                        This will permanently delete all your tracked moles, photos, and history. You won't be able to undo this.
+                                    </p>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setShowResetConfirm(false)}
+                                        className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-medium transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleResetData}
+                                        className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-medium transition-colors shadow-lg shadow-red-500/20"
+                                    >
+                                        Yes, Reset
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
-                )}
-            </AnimatePresence>
+                </div>
+            )}
 
             {/* Security Explanation Modal */}
-            <AnimatePresence>
-                {showSecurity && (
-                    <div className="fixed inset-0 bg-black/90 backdrop-blur-md pointer-events-auto z-[70] flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            transition={{ duration: 0.15, ease: "easeOut" }}
-                            className="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl max-h-[85vh] overflow-y-auto"
-                        >
-                            <div className="flex items-center justify-between mb-6 sticky top-0 bg-slate-900 pb-2">
-                                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                                    <ShieldCheck className="w-6 h-6 text-emerald-400" />
-                                    Privacy Policy
-                                </h2>
-                                <button onClick={() => setShowSecurity(false)} className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors">
-                                    <X className="w-6 h-6" />
-                                </button>
+            {showSecurity && (
+                <div className="fixed inset-0 bg-black/90 backdrop-blur-md pointer-events-auto z-[70] flex items-center justify-center p-4">
+                    <div
+                        className="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl max-h-[85vh] overflow-y-auto animate-fade-in"
+                    >
+                        <div className="flex items-center justify-between mb-6 sticky top-0 bg-slate-900 pb-2">
+                            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                                <ShieldCheck className="w-6 h-6 text-emerald-400" />
+                                Privacy Policy
+                            </h2>
+                            <button onClick={() => setShowSecurity(false)} className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors">
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-6 text-slate-300">
+                            <section>
+                                <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                                    <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400">1</div>
+                                    Local-Only Storage
+                                </h3>
+                                <p className="text-sm leading-relaxed">
+                                    All your data, including mole locations and photos, is stored exclusively on your device using IndexedDB.
+                                    Each application runs in an isolated "sandbox," meaning other apps cannot access your Track-A-Mole database.
+                                </p>
+                            </section>
+
+                            <section>
+                                <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                                    <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400">2</div>
+                                    No Cloud Sync
+                                </h3>
+                                <p className="text-sm leading-relaxed">
+                                    Track-A-Mole has no backend server and requires no account. Your health data never leaves your device,
+                                    eliminating the risk of a server-side data breach.
+                                </p>
+                            </section>
+
+                            <section>
+                                <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                                    <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400">3</div>
+                                    Open & Verifiable
+                                </h3>
+                                <p className="text-sm leading-relaxed">
+                                    The entire app is Open Source (GPL v3). You can inspect the source code to confirm there are no tracking scripts,
+                                    and monitor network traffic to verify that zero data is transmitted while you use the app.
+                                </p>
+                            </section>
+
+                            <div className="p-4 rounded-2xl bg-slate-800/50 border border-slate-700/50 items-start gap-3 flex">
+                                <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                                <p className="text-xs text-slate-400 leading-normal">
+                                    Since there is no cloud backup, your data is lost if you lose your device or clear your browser data.
+                                    Use the **Export** feature in settings to create your own secure backups.
+                                </p>
                             </div>
-
-                            <div className="space-y-6 text-slate-300">
-                                <section>
-                                    <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-                                        <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400">1</div>
-                                        Local-Only Storage
-                                    </h3>
-                                    <p className="text-sm leading-relaxed">
-                                        All your data, including mole locations and photos, is stored exclusively on your device using IndexedDB.
-                                        Each application runs in an isolated "sandbox," meaning other apps cannot access your Track-A-Mole database.
-                                    </p>
-                                </section>
-
-                                <section>
-                                    <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-                                        <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400">2</div>
-                                        No Cloud Sync
-                                    </h3>
-                                    <p className="text-sm leading-relaxed">
-                                        Track-A-Mole has no backend server and requires no account. Your health data never leaves your device,
-                                        eliminating the risk of a server-side data breach.
-                                    </p>
-                                </section>
-
-                                <section>
-                                    <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-                                        <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400">3</div>
-                                        Open & Verifiable
-                                    </h3>
-                                    <p className="text-sm leading-relaxed">
-                                        The entire app is Open Source (GPL v3). You can inspect the source code to confirm there are no tracking scripts,
-                                        and monitor network traffic to verify that zero data is transmitted while you use the app.
-                                    </p>
-                                </section>
-
-                                <div className="p-4 rounded-2xl bg-slate-800/50 border border-slate-700/50 items-start gap-3 flex">
-                                    <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                                    <p className="text-xs text-slate-400 leading-normal">
-                                        Since there is no cloud backup, your data is lost if you lose your device or clear your browser data.
-                                        Use the **Export** feature in settings to create your own secure backups.
-                                    </p>
-                                </div>
-                            </div>
-                        </motion.div>
+                        </div>
                     </div>
-                )}
-            </AnimatePresence>
+                </div>
+            )}
 
             {/* Export Password Modal */}
-            <AnimatePresence>
-                {showExportWindow && (
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-[70] flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: 20, opacity: 0 }}
-                            className="glass border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl"
-                        >
-                            <h2 className="text-xl font-bold text-white mb-2">Secure Export</h2>
-                            <p className="text-slate-400 text-sm mb-6">
-                                Create an encrypted backup. If you set a password, you will need it to restore your data.
-                            </p>
+            {showExportWindow && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-[70] flex items-center justify-center p-4">
+                    <div className="glass border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-fade-in">
+                        <h2 className="text-xl font-bold text-white mb-2">Secure Export</h2>
+                        <p className="text-slate-400 text-sm mb-6">
+                            Create an encrypted backup. If you set a password, you will need it to restore your data.
+                        </p>
 
-                            <div className="space-y-4">
-                                <div className="relative">
-                                    <input
-                                        type={showPassword ? "text" : "password"}
-                                        placeholder="Optional Password"
-                                        value={exportPassword}
-                                        onChange={(e) => setExportPassword(e.target.value)}
-                                        className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-rose-500"
-                                    />
-                                    <button
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
-                                    >
-                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                    </button>
-                                </div>
-
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={() => setShowExportWindow(false)}
-                                        className="flex-1 bg-slate-800 text-white py-3 rounded-xl font-medium"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={handleExport}
-                                        className="flex-1 bg-rose-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"
-                                    >
-                                        {exportPassword ? <Lock className="w-4 h-4" /> : <Download className="w-4 h-4" />}
-                                        Export
-                                    </button>
-                                </div>
+                        <div className="space-y-4">
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="Optional Password"
+                                    value={exportPassword}
+                                    onChange={(e) => setExportPassword(e.target.value)}
+                                    className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-rose-500"
+                                />
+                                <button
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                                >
+                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
                             </div>
-                        </motion.div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowExportWindow(false)}
+                                    className="flex-1 bg-slate-800 text-white py-3 rounded-xl font-medium"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleExport}
+                                    className="flex-1 bg-rose-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"
+                                >
+                                    {exportPassword ? <Lock className="w-4 h-4" /> : <Download className="w-4 h-4" />}
+                                    Export
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                )}
-            </AnimatePresence>
+                </div>
+            )}
 
             {/* Import Password Modal */}
-            <AnimatePresence>
-                {showImportWindow && (
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-[70] flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: 20, opacity: 0 }}
-                            className="glass border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl"
-                        >
-                            <h2 className="text-xl font-bold text-white mb-2">Restoring Data</h2>
-                            <p className="text-slate-400 text-sm mb-6">
-                                This encrypted backup requires a password to decrypt.
-                            </p>
+            {showImportWindow && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-[70] flex items-center justify-center p-4">
+                    <div className="glass border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-fade-in">
+                        <h2 className="text-xl font-bold text-white mb-2">Restoring Data</h2>
+                        <p className="text-slate-400 text-sm mb-6">
+                            This encrypted backup requires a password to decrypt.
+                        </p>
 
-                            <div className="space-y-4">
-                                <input
-                                    type="password"
-                                    placeholder="Enter backup password"
-                                    value={importPassword}
-                                    onChange={(e) => setImportPassword(e.target.value)}
-                                    className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-rose-500"
-                                    autoFocus
-                                />
+                        <div className="space-y-4">
+                            <input
+                                type="password"
+                                placeholder="Enter backup password"
+                                value={importPassword}
+                                onChange={(e) => setImportPassword(e.target.value)}
+                                className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-rose-500"
+                                autoFocus
+                            />
 
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={() => { setShowImportWindow(false); setImportPassword(""); }}
-                                        className="flex-1 bg-slate-800 text-white py-3 rounded-xl font-medium"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={handlePasswordImport}
-                                        className="flex-1 bg-rose-500 text-white py-3 rounded-xl font-bold"
-                                    >
-                                        Decrypt & Restore
-                                    </button>
-                                </div>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => { setShowImportWindow(false); setImportPassword(""); }}
+                                    className="flex-1 bg-slate-800 text-white py-3 rounded-xl font-medium"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handlePasswordImport}
+                                    className="flex-1 bg-rose-500 text-white py-3 rounded-xl font-bold"
+                                >
+                                    Decrypt & Restore
+                                </button>
                             </div>
-                        </motion.div>
+                        </div>
                     </div>
-                )}
-            </AnimatePresence>
+                </div>
+            )}
 
             {/* Mole Deletion Confirmation */}
-            <AnimatePresence>
-                {moleToDelete && (
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[80] flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            transition={{ duration: 0.15, ease: "easeOut" }}
-                            className="bg-slate-900 border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center"
-                        >
-                            <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
-                                <Trash2 className="w-8 h-8 text-red-500" />
-                            </div>
-                            <h2 className="text-xl font-bold mb-2 text-white">Delete Mole?</h2>
-                            <p className="text-slate-400 text-sm mb-8">
-                                This will permanently delete this mole and all its check-up history. This action cannot be undone.
-                            </p>
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setMoleToDelete(null)}
-                                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-medium transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmDeleteMole}
-                                    className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-red-500/20"
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </motion.div>
+            {moleToDelete && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[80] flex items-center justify-center p-4">
+                    <div
+                        className="bg-slate-900 border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center animate-fade-in"
+                    >
+                        <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+                            <Trash2 className="w-8 h-8 text-red-500" />
+                        </div>
+                        <h2 className="text-xl font-bold mb-2 text-white">Delete Mole?</h2>
+                        <p className="text-slate-400 text-sm mb-8">
+                            This will permanently delete this mole and all its check-up history. This action cannot be undone.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setMoleToDelete(null)}
+                                className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-medium transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDeleteMole}
+                                className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-red-500/20"
+                            >
+                                Delete
+                            </button>
+                        </div>
                     </div>
-                )}
-            </AnimatePresence>
+                </div>
+            )}
 
             {/* Entry Deletion Confirmation */}
-            <AnimatePresence>
-                {entryToDelete && (
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[80] flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            transition={{ duration: 0.15, ease: "easeOut" }}
-                            className="bg-slate-900 border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center"
-                        >
-                            <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-                                <AlertTriangle className="w-8 h-8 text-red-400" />
-                            </div>
-                            <h2 className="text-xl font-bold mb-2 text-white">Remove Entry?</h2>
-                            <p className="text-slate-400 text-sm mb-8">
-                                Are you sure you want to remove this check-up record?
-                            </p>
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setEntryToDelete(null)}
-                                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-medium transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmDeleteEntry}
-                                    className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-red-500/20"
-                                >
-                                    Remove
-                                </button>
-                            </div>
-                        </motion.div>
+            {entryToDelete && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[80] flex items-center justify-center p-4">
+                    <div
+                        className="bg-slate-900 border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center animate-fade-in"
+                    >
+                        <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+                            <AlertTriangle className="w-8 h-8 text-red-400" />
+                        </div>
+                        <h2 className="text-xl font-bold mb-2 text-white">Remove Entry?</h2>
+                        <p className="text-slate-400 text-sm mb-8">
+                            Are you sure you want to remove this check-up record?
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setEntryToDelete(null)}
+                                className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-medium transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDeleteEntry}
+                                className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-red-500/20"
+                            >
+                                Remove
+                            </button>
+                        </div>
                     </div>
-                )}
-            </AnimatePresence>
-
-            {/* Mole Deletion Confirmation */}
-            <AnimatePresence>
-                {moleToDelete && (
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[80] flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            transition={{ duration: 0.15, ease: "easeOut" }}
-                            className="bg-slate-900 border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center"
-                        >
-                            <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
-                                <Trash2 className="w-8 h-8 text-red-500" />
-                            </div>
-                            <h2 className="text-xl font-bold mb-2 text-white">Delete Mole?</h2>
-                            <p className="text-slate-400 text-sm mb-8">
-                                This will permanently delete this mole and all its check-up history. This action cannot be undone.
-                            </p>
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setMoleToDelete(null)}
-                                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-medium transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmDeleteMole}
-                                    className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-red-500/20"
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
-
-            {/* Entry Deletion Confirmation */}
-            <AnimatePresence>
-                {entryToDelete && (
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[80] flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            transition={{ duration: 0.15, ease: "easeOut" }}
-                            className="bg-slate-900 border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center"
-                        >
-                            <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-                                <AlertTriangle className="w-8 h-8 text-red-400" />
-                            </div>
-                            <h2 className="text-xl font-bold mb-2 text-white">Remove Entry?</h2>
-                            <p className="text-slate-400 text-sm mb-8">
-                                Are you sure you want to remove this check-up record?
-                            </p>
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setEntryToDelete(null)}
-                                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-medium transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmDeleteEntry}
-                                    className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-red-500/20"
-                                >
-                                    Remove
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+                </div>
+            )}
 
             {/* Top Bar */}
             <div
@@ -1004,34 +874,32 @@ export default function UIOverlay() {
                 style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}
             >
                 <div className="max-w-xl mx-auto">
-                    <AnimatePresence mode="popLayout">
-                        {isAddingMole ? (
-                            <AddMolePanel
-                                key="add"
-                                onSave={handleAddMole}
-                                label={newLabel}
-                                setLabel={setNewLabel}
-                            />
-                        ) : selectedMoleId ? (
-                            <MoleDetailPanel
-                                key="detail"
-                                onAddEntry={() => {
-                                    resetEntryForm();
-                                    setShowAddEntry(true);
-                                }}
-                                onDeleteMole={handleDeleteMole}
-                                onUpdateLabel={handleUpdateMoleLabel}
-                                onDeleteEntry={handleDeleteEntry}
-                                onEditEntry={startEditEntry}
-                                editingMoleId={editingMoleId}
-                                setEditingMoleId={setEditingMoleId}
-                                editLabel={editLabel}
-                                setEditLabel={setEditLabel}
-                            />
-                        ) : (
-                            <MoleListPanel key="list" moles={moles} />
-                        )}
-                    </AnimatePresence>
+                    {isAddingMole ? (
+                        <AddMolePanel
+                            key="add"
+                            onSave={handleAddMole}
+                            label={newLabel}
+                            setLabel={setNewLabel}
+                        />
+                    ) : selectedMoleId ? (
+                        <MoleDetailPanel
+                            key="detail"
+                            onAddEntry={() => {
+                                resetEntryForm();
+                                setShowAddEntry(true);
+                            }}
+                            onDeleteMole={handleDeleteMole}
+                            onUpdateLabel={handleUpdateMoleLabel}
+                            onDeleteEntry={handleDeleteEntry}
+                            onEditEntry={startEditEntry}
+                            editingMoleId={editingMoleId}
+                            setEditingMoleId={setEditingMoleId}
+                            editLabel={editLabel}
+                            setEditLabel={setEditLabel}
+                        />
+                    ) : (
+                        <MoleListPanel key="list" moles={moles} />
+                    )}
                 </div>
             </div>
         </div>
@@ -1042,12 +910,8 @@ function MoleListPanel({ moles }: { moles: any[] | undefined }) {
     const setSelectedMoleId = useAppStore((s: AppState) => s.setSelectedMoleId);
 
     return (
-        <motion.div
-            initial={{ y: "15%", opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: "15%", opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="glass rounded-3xl p-6 max-h-[50vh] flex flex-col border-t border-white/10 shadow-2xl bg-slate-900/80 pointer-events-auto w-full"
+        <div
+            className="glass rounded-3xl p-6 max-h-[50vh] flex flex-col border-t border-white/10 shadow-2xl bg-slate-900/80 pointer-events-auto w-full animate-slide-up"
         >
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -1100,7 +964,7 @@ function MoleListPanel({ moles }: { moles: any[] | undefined }) {
                     ))}
                 </div>
             )}
-        </motion.div>
+        </div>
     );
 }
 
@@ -1131,12 +995,8 @@ function AddMolePanel({ onSave, label, setLabel }: { onSave: () => void, label: 
     const setTempMolePosition = useAppStore((s: AppState) => s.setTempMolePosition);
 
     return (
-        <motion.div
-            initial={{ y: "15%", opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: "15%", opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="glass rounded-3xl p-6 border-t border-rose-500/20 shadow-2xl bg-slate-900/90 pointer-events-auto w-full"
+        <div
+            className="glass rounded-3xl p-6 border-t border-rose-500/20 shadow-2xl bg-slate-900/90 pointer-events-auto w-full animate-slide-up"
         >
             <div className="flex items-center justify-between mb-6">
                 <div>
@@ -1145,8 +1005,8 @@ function AddMolePanel({ onSave, label, setLabel }: { onSave: () => void, label: 
                 </div>
                 <button
                     onClick={() => {
-                        setIsAddingMole(false);
-                        setTempMolePosition(null);
+                        useAppStore.getState().setIsAddingMole(false);
+                        useAppStore.getState().setTempMolePosition(null);
                         setLabel("");
                     }}
                     className="p-2 -mr-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
@@ -1209,7 +1069,7 @@ function AddMolePanel({ onSave, label, setLabel }: { onSave: () => void, label: 
                 <Check className="w-5 h-5" />
                 Save Mole
             </button>
-        </motion.div>
+        </div>
     );
 }
 
@@ -1250,12 +1110,8 @@ function MoleDetailPanel({
     if (!activeMole) return null;
 
     return (
-        <motion.div
-            initial={{ y: "15%", opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: "15%", opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="glass rounded-3xl p-6 max-h-[70vh] flex flex-col border-t border-white/10 shadow-2xl bg-slate-900/90 pointer-events-auto w-full"
+        <div
+            className="glass rounded-3xl p-6 max-h-[70vh] flex flex-col border-t border-white/10 shadow-2xl bg-slate-900/90 pointer-events-auto w-full animate-slide-up"
         >
             <div className="flex items-center justify-between mb-6">
                 <div className="flex-1">
@@ -1383,6 +1239,6 @@ function MoleDetailPanel({
                     )}
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
 }

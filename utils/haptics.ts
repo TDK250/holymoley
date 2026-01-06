@@ -5,35 +5,21 @@ const isNative = Capacitor.isNativePlatform();
 
 export const haptics = {
     light: async () => {
-        if (isNative) {
-            await Haptics.impact({ style: ImpactStyle.Light });
-        }
+        // Haptics disabled
     },
     medium: async () => {
-        if (isNative) {
-            await Haptics.impact({ style: ImpactStyle.Medium });
-        }
+        // Haptics disabled
     },
     heavy: async () => {
-        if (isNative) {
-            await Haptics.impact({ style: ImpactStyle.Heavy });
-        }
+        // Haptics disabled
     },
     success: async () => {
-        if (isNative) {
-            await Haptics.notification({ type: 'success' as any });
-        }
+        // Haptics disabled
     },
     error: async () => {
-        if (isNative) {
-            await Haptics.notification({ type: 'error' as any });
-        }
+        // Haptics disabled
     },
     selection: async () => {
-        if (isNative) {
-            await Haptics.selectionStart();
-            await Haptics.selectionChanged();
-            await Haptics.selectionEnd();
-        }
+        // Haptics disabled
     }
 };
