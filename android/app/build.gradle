@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
 android {
     namespace = "com.tomkerr.trackamole"
     compileSdk = rootProject.ext.compileSdkVersion

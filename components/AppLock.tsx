@@ -5,6 +5,7 @@ import { Lock, Unlock, Delete } from 'lucide-react';
 
 export default function AppLock({ children }: { children: React.ReactNode }) {
     const [isLocked, setIsLocked] = useState(true);
+    const [isChecking, setIsChecking] = useState(true);
     const [pin, setPin] = useState("");
     const [hasPin, setHasPin] = useState(false);
     const [error, setError] = useState(false);
@@ -19,6 +20,7 @@ export default function AppLock({ children }: { children: React.ReactNode }) {
             setHasPin(false);
             setIsLocked(false);
         }
+        setIsChecking(false);
     }, []);
 
     const handleNumberClick = (num: number) => {
@@ -57,6 +59,10 @@ export default function AppLock({ children }: { children: React.ReactNode }) {
         }
     }, [pin, hasPin]);
 
+    if (isChecking) {
+        return null; // Or a loading spinner if preferred, but null prevents flash
+    }
+
     if (!isLocked) {
         return <>{children}</>;
     }
@@ -77,8 +83,8 @@ export default function AppLock({ children }: { children: React.ReactNode }) {
                         <div
                             key={i}
                             className={`w-4 h-4 rounded-full transition-all ${i < pin.length
-                                    ? (error ? 'bg-red-500' : 'bg-rose-500')
-                                    : 'bg-slate-800'
+                                ? (error ? 'bg-red-500' : 'bg-rose-500')
+                                : 'bg-slate-800'
                                 }`}
                         />
                     ))}

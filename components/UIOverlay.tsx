@@ -498,6 +498,54 @@ export default function UIOverlay() {
                                         </div>
                                     </div>
 
+                                    {/* App Lock Section */}
+                                    <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <Lock className="w-4 h-4 text-rose-400" />
+                                                <div className="flex flex-col">
+                                                    <p className="font-bold text-white tracking-wide">App Lock</p>
+                                                    <p className="text-[10px] text-slate-400">Require PIN to open app</p>
+                                                </div>
+                                            </div>
+                                            <label className="relative inline-flex items-center cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    className="sr-only peer"
+                                                    checked={hasPin}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setPinFlow('setup');
+                                                            setPinStep('enter');
+                                                            setPinInput("");
+                                                            setTempPin("");
+                                                            setShowPinSetup(true);
+                                                        } else {
+                                                            setPinFlow('remove');
+                                                            setPinStep('enter');
+                                                            setPinInput("");
+                                                            setShowPinSetup(true);
+                                                        }
+                                                    }}
+                                                />
+                                                <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                                            </label>
+                                        </div>
+                                        {hasPin && (
+                                            <button
+                                                onClick={() => {
+                                                    setPinFlow('change');
+                                                    setPinStep('current');
+                                                    setPinInput("");
+                                                    setShowPinSetup(true);
+                                                }}
+                                                className="w-full text-xs text-rose-400 font-bold uppercase tracking-wider bg-slate-800 hover:bg-slate-700 py-2 rounded-lg transition-colors border border-slate-700"
+                                            >
+                                                Change PIN
+                                            </button>
+                                        )}
+                                    </div>
+
                                     {/* Security & Data Section */}
                                     <div className="space-y-2">
                                         <button
@@ -809,10 +857,13 @@ export default function UIOverlay() {
                                 {pinFlow === 'setup' && pinStep === 'enter' && "Create PIN"}
                                 {pinFlow === 'setup' && pinStep === 'confirm' && "Confirm PIN"}
                                 {pinFlow === 'remove' && "Enter Current PIN"}
+                                {pinFlow === 'change' && pinStep === 'current' && "Enter Old PIN"}
+                                {pinFlow === 'change' && pinStep === 'enter' && "Enter New PIN"}
+                                {pinFlow === 'change' && pinStep === 'confirm' && "Confirm New PIN"}
                             </h2>
                             <p className="text-slate-400 mb-8 text-sm text-center">
                                 {pinError ? <span className="text-red-500 font-bold">Incorrect PIN. Try again.</span> :
-                                    (pinFlow === 'setup' && pinStep === 'confirm' ? "Re-enter to confirm" : "Enter a 4-digit code")}
+                                    (pinStep === 'confirm' ? "Re-enter to confirm" : "Enter a 4-digit code")}
                             </p>
 
                             <div className="flex gap-4 mb-8">
@@ -833,17 +884,20 @@ export default function UIOverlay() {
 
                                                 if (newPin.length === 4) {
                                                     setTimeout(() => {
+                                                        const stored = localStorage.getItem('app-lock-pin');
+
+                                                        // SETUP FLOW
                                                         if (pinFlow === 'setup') {
                                                             if (pinStep === 'enter') {
                                                                 setTempPin(newPin);
                                                                 setPinInput("");
                                                                 setPinStep('confirm');
-                                                            } else {
+                                                            } else if (pinStep === 'confirm') {
                                                                 if (newPin === tempPin) {
                                                                     localStorage.setItem('app-lock-pin', newPin);
                                                                     setHasPin(true);
                                                                     setShowPinSetup(false);
-                                                                    // Success haptic
+                                                                    haptics.success();
                                                                 } else {
                                                                     setPinError(true);
                                                                     setPinInput("");
@@ -851,15 +905,47 @@ export default function UIOverlay() {
                                                                     setTempPin("");
                                                                 }
                                                             }
-                                                        } else if (pinFlow === 'remove') {
-                                                            const stored = localStorage.getItem('app-lock-pin');
+                                                        }
+                                                        // REMOVE FLOW
+                                                        else if (pinFlow === 'remove') {
                                                             if (newPin === stored) {
                                                                 localStorage.removeItem('app-lock-pin');
                                                                 setHasPin(false);
                                                                 setShowPinSetup(false);
+                                                                haptics.success();
                                                             } else {
                                                                 setPinError(true);
                                                                 setPinInput("");
+                                                                haptics.error();
+                                                            }
+                                                        }
+                                                        // CHANGE FLOW
+                                                        else if (pinFlow === 'change') {
+                                                            if (pinStep === 'current') {
+                                                                if (newPin === stored) {
+                                                                    setPinInput("");
+                                                                    setPinStep('enter');
+                                                                } else {
+                                                                    setPinError(true);
+                                                                    setPinInput("");
+                                                                    haptics.error();
+                                                                }
+                                                            } else if (pinStep === 'enter') {
+                                                                setTempPin(newPin);
+                                                                setPinInput("");
+                                                                setPinStep('confirm');
+                                                            } else if (pinStep === 'confirm') {
+                                                                if (newPin === tempPin) {
+                                                                    localStorage.setItem('app-lock-pin', newPin);
+                                                                    setShowPinSetup(false);
+                                                                    haptics.success();
+                                                                } else {
+                                                                    setPinError(true);
+                                                                    setPinInput("");
+                                                                    setPinStep('enter');
+                                                                    setTempPin("");
+                                                                    haptics.error();
+                                                                }
                                                             }
                                                         }
                                                     }, 200);
