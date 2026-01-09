@@ -962,7 +962,7 @@ export default function UIOverlay() {
                                         onClick={() => setPinInput(prev => prev.slice(0, -1))}
                                         className="p-4 rounded-full text-slate-400 hover:text-white hover:bg-slate-800"
                                     >
-                                        <Delete className="w-6 h-6" /> // Wait, I imported Delete? Need to check imports.
+                                        <Delete className="w-6 h-6" />
                                         {/* Actually I used X or Trash2 before. Let's use X for backspace or check if Delete is proper lucide icon. Lucide has Delete. */}
                                         <X className="w-6 h-6" />
                                     </button>
