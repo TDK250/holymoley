@@ -15,7 +15,7 @@ export const ImportExportService = {
         let blob: Blob;
         let filename = `trackamole-backup-${new Date().toISOString().split('T')[0]}`;
 
-        if (password) {
+        if (password && password.trim().length > 0) {
             const encryptedData = await this.encrypt(JSON.stringify(data), password);
             blob = new Blob([encryptedData], { type: 'application/octet-stream' });
             filename += '.tam';

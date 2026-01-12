@@ -125,7 +125,8 @@ export default function UIOverlay() {
     }, [smartRemindersEnabled, setSmartRemindersEnabled]);
 
     const handleExport = async () => {
-        await ImportExportService.exportData(exportPassword || undefined);
+        const pass = exportPassword ? exportPassword.trim() : undefined;
+        await ImportExportService.exportData(pass);
         setShowExportWindow(false);
         setExportPassword("");
     };
@@ -154,7 +155,7 @@ export default function UIOverlay() {
         if (!file) return;
 
         try {
-            await ImportExportService.importData(file, importPassword);
+            await ImportExportService.importData(file, importPassword.trim());
             alert("Data imported successfully!");
             setShowImportWindow(false);
             setImportPassword("");
@@ -1086,7 +1087,12 @@ function DraggableBottomSheet({
     useEffect(() => {
         const targetY = isMenuOpen ? 0 : contentHeight - 110; // 110px peek (enough for pull handle + header)
         controls.start({ y: targetY, transition: { type: "spring", stiffness: 300, damping: 30 } });
-    }, [isMenuOpen, controls, contentHeight]);
+
+        // IMMEDIATE SYNC: Ensure store knows the target height immediately
+        // This prevents the "jump" when model loads before drag interaction
+        const targetHeight = isMenuOpen ? contentHeight : 110;
+        setMenuHeight(targetHeight);
+    }, [isMenuOpen, controls, contentHeight, setMenuHeight]);
 
     // Sync menu height for 3D model centering
     useEffect(() => {

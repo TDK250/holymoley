@@ -32,6 +32,8 @@ export default function CameraController() {
 
         const onStart = () => {
             isFocusing.current = false;
+            // Mark interaction for tutorial
+            useAppStore.getState().setHasInteractedWithModel(true);
         };
 
         orbitControls.addEventListener("start", onStart);
@@ -58,9 +60,19 @@ export default function CameraController() {
         if (selectedMole && selectedMole.position) {
             // MOLE FOCUS MODE
             const [x, y, z] = selectedMole.position;
-            targetPosition.current.set(x, y, z);
-
             const molePos = new THREE.Vector3(x, y, z);
+
+            // Calculate Vertical Shift for centering above menu
+            const panelSizeRatio = menuHeight / size.height;
+            const fovRad = (camera as THREE.PerspectiveCamera).fov * (Math.PI / 180);
+            const distance = 1.2;
+            const verticalShift = panelSizeRatio * distance * Math.tan(fovRad / 2);
+
+            // Shift target DOWN so mole appears UP
+            const visualTarget = molePos.clone();
+            visualTarget.y -= verticalShift;
+
+            targetPosition.current.copy(visualTarget);
 
             // PRIORITY: Use surface normal for "head-on" view
             let viewDir = new THREE.Vector3();
@@ -76,8 +88,8 @@ export default function CameraController() {
             viewDir.normalize();
             if (viewDir.lengthSq() < 0.001) viewDir.set(0, 0, 1);
 
-            // Position camera closer (1.2 units) for detail
-            const camPos = molePos.clone().add(viewDir.multiplyScalar(1.2));
+            // Position camera closer (1.2 units) for detail, relative to the shifted target
+            const camPos = visualTarget.clone().add(viewDir.multiplyScalar(distance));
             targetCameraPosition.current.copy(camPos);
 
             isFocusing.current = true;

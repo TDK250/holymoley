@@ -37,6 +37,8 @@ export interface AppState {
     tutorialStep: number; // 0=none, 1=welcome, 2=camera, 3=add, 4=menu
     setTutorialStep: (step: number) => void;
     completeTutorial: () => void;
+    hasInteractedWithModel: boolean;
+    setHasInteractedWithModel: (has: boolean) => void;
 }
 
 export const useAppStore = create<AppState>((set) => {
@@ -91,6 +93,8 @@ export const useAppStore = create<AppState>((set) => {
         completeTutorial: () => {
             set({ tutorialStep: 0 });
             if (isClient) localStorage.setItem('tutorial-completed', 'true');
-        }
+        },
+        hasInteractedWithModel: false,
+        setHasInteractedWithModel: (has) => set({ hasInteractedWithModel: has })
     };
 });
