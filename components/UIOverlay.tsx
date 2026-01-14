@@ -428,8 +428,8 @@ export default function UIOverlay() {
 
             {/* Add Entry Modal */}
             {showAddEntry && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-50 flex items-end sm:items-center justify-center px-4 pb-12 pt-4">
-                    <div className="glass rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-white/10 overflow-hidden flex flex-col max-h-[90vh] animate-slide-up">
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-50 flex items-center justify-center p-4">
+                    <div className="glass rounded-3xl p-6 max-w-md w-full shadow-2xl border border-white/10 overflow-hidden flex flex-col max-h-[85vh] animate-slide-up">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl font-bold text-white">
                                 {editingEntryId ? 'Update Check-up' : 'New Check-up'}
