@@ -418,7 +418,7 @@ export default function UIOverlay() {
 
             {/* Add Entry Modal */}
             {showAddEntry && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-50 flex items-end sm:items-center justify-center p-4">
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-50 flex items-end sm:items-center justify-center px-4 pb-12 pt-4">
                     <div className="glass rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-white/10 overflow-hidden flex flex-col max-h-[90vh] animate-slide-up">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl font-bold text-white">
@@ -591,7 +591,7 @@ export default function UIOverlay() {
             {/* Settings Panel */}
             {showSettings && (
                 <div
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto z-40 flex items-end sm:items-center justify-center p-4 fade-in"
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto z-40 flex items-end sm:items-center justify-center px-4 pb-12 pt-4 fade-in"
                     onClick={() => !showResetConfirm && setShowSettings(false)}
                 >
                     <div
@@ -759,7 +759,7 @@ export default function UIOverlay() {
 
             {/* Security Explanation Modal */}
             {showSecurity && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[70] flex items-end sm:items-center justify-center p-4">
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[70] flex items-end sm:items-center justify-center px-4 pb-12 pt-4">
                     <div
                         className="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-slide-up"
                         onClick={(e) => e.stopPropagation()}
@@ -834,7 +834,7 @@ export default function UIOverlay() {
 
             {/* Export Password Modal */}
             {showExportWindow && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-[70] flex items-end sm:items-center justify-center p-4">
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-[70] flex items-end sm:items-center justify-center px-4 pb-12 pt-4">
                     <div className="glass border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-slide-up">
                         <h2 className="text-xl font-bold text-white mb-2">Secure Export</h2>
                         <p className="text-slate-400 text-sm mb-6">
@@ -880,7 +880,7 @@ export default function UIOverlay() {
 
             {/* Import Password Modal */}
             {showImportWindow && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-[70] flex items-end sm:items-center justify-center p-4">
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-[70] flex items-end sm:items-center justify-center px-4 pb-12 pt-4">
                     <div className="glass border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-slide-up">
                         <h2 className="text-xl font-bold text-white mb-2">Restoring Data</h2>
                         <p className="text-slate-400 text-sm mb-6">
@@ -918,7 +918,7 @@ export default function UIOverlay() {
             {/* ABCDE Guide Modal */}
             {showABCDEModal && (
                 <div
-                    className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-[120] flex items-end sm:items-center justify-center p-4"
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-[120] flex items-end sm:items-center justify-center px-4 pb-12 pt-4"
                     onClick={() => {
                         setShowABCDEModal(false);
                         setAbcdeChecked(new Set());
@@ -1075,7 +1075,7 @@ export default function UIOverlay() {
             {/* PIN Setup Modal */}
             {
                 showPinSetup && (
-                    <div className="fixed inset-0 bg-black/90 backdrop-blur-md pointer-events-auto z-[80] flex items-end sm:items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/90 backdrop-blur-md pointer-events-auto z-[80] flex items-end sm:items-center justify-center px-4 pb-12 pt-4">
                         <div className="w-full max-w-xs flex flex-col items-center animate-slide-up">
                             <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-6 text-white">
                                 <Lock className="w-8 h-8" />
@@ -1382,10 +1382,10 @@ function DraggableBottomSheet({
             <div
                 className="w-full relative bg-transparent"
                 style={{
-                    paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)',
+                    paddingBottom: 'calc(env(safe-area-inset-bottom) + 1.5rem)',
                 }}
             >
-                <div className="max-w-xl mx-auto flex flex-col items-center">
+                <div className="max-w-xl mx-auto flex flex-col items-center px-4">
                     {/* Pull Handle Area - Enhanced target for easier dragging */}
                     <div className="w-full flex justify-center relative z-20 pt-6 cursor-grab active:cursor-grabbing pb-4 touch-none">
                         <div className="w-12 h-1.5 bg-white/30 rounded-full shadow-lg" />
@@ -1454,7 +1454,7 @@ function MoleListPanel({
 
     return (
         <div
-            className="glass rounded-3xl p-6 max-h-[50vh] flex flex-col border-t border-white/10 shadow-2xl bg-slate-900/80 pointer-events-auto w-full"
+            className="glass rounded-3xl p-6 max-h-[50vh] flex flex-col border border-white/10 shadow-2xl bg-slate-900/80 pointer-events-auto w-full"
         >
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -1606,7 +1606,7 @@ function AddMolePanel({ onSave, label, setLabel }: { onSave: () => void, label: 
 
     return (
         <div
-            className="glass rounded-3xl p-6 border-t border-rose-500/20 shadow-2xl bg-slate-900/90 pointer-events-auto w-full"
+            className="glass rounded-3xl p-6 border border-rose-500/20 shadow-2xl bg-slate-900/90 pointer-events-auto w-full"
         >
             <div className="flex items-center justify-between mb-6">
                 <div>
@@ -1724,7 +1724,7 @@ function MoleDetailPanel({
 
     return (
         <div
-            className="glass rounded-3xl p-6 max-h-[70vh] flex flex-col border-t border-white/10 shadow-2xl bg-slate-900/90 pointer-events-auto w-full"
+            className="glass rounded-3xl p-6 max-h-[70vh] flex flex-col border border-white/10 shadow-2xl bg-slate-900/90 pointer-events-auto w-full"
         >
             <div className="flex items-center justify-between mb-6">
                 <div className="flex-1">
@@ -1979,7 +1979,7 @@ function ImageOverlay({
             {/* ABCDE Guide Overlay */}
             {showABCDEGuide && (
                 <div
-                    className="absolute inset-0 z-30 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 animate-fade-in pointer-events-auto"
+                    className="absolute inset-0 z-30 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center px-4 pb-12 pt-4 animate-fade-in pointer-events-auto"
                     onClick={() => setShowABCDEGuide(false)}
                 >
                     <div
