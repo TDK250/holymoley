@@ -141,9 +141,19 @@ export default function UIOverlay() {
         const savedPin = localStorage.getItem('app-lock-pin');
         setHasPin(!!savedPin);
 
-        // Check Tutorial (if not onboarding)
+        // Check Tutorial (only if fully loaded and not onboarding)
         const tutorialDone = localStorage.getItem('tutorial-completed');
-        if (!tutorialDone && !showOnboarding) {
+        // We defer this check slightly or ensure showOnboarding is settled
+        if (!tutorialDone && hasSelectedGender) {
+            // Only set step 1 if we are sure we are not onboarding
+            setTutorialStep(1);
+        }
+    }, []); // Run once on mount
+
+    // Separate effect to handle post-onboarding tutorial start
+    useEffect(() => {
+        const tutorialDone = localStorage.getItem('tutorial-completed');
+        if (!showOnboarding && !tutorialDone && localStorage.getItem('gender-selected')) {
             setTutorialStep(1);
         }
     }, [showOnboarding]);
