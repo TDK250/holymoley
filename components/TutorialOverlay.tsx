@@ -83,26 +83,7 @@ export default function TutorialOverlay() {
                     </div>
                 )}
 
-                {/* Step 4 Visual Cue: Tap Animation for New Mole Button */}
-                {tutorialStep === 4 && (
-                    <div className="absolute inset-0 pointer-events-none">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            // Positioned roughly relative to the bottom-right button
-                            // button logic: absolute bottom-0 ... p-4 padding ... button size
-                            className="absolute bottom-32 right-8 md:right-[calc(50%-10rem)] z-50"
-                        >
-                            <motion.div
-                                animate={{ scale: [1, 0.9, 1], y: [0, 10, 0] }}
-                                transition={{ repeat: Infinity, duration: 1.5 }}
-                                className="text-rose-500 bg-white rounded-full p-2 shadow-xl shadow-rose-500/20"
-                            >
-                                <ArrowUp className="w-8 h-8 fill-current rotate-180" />
-                            </motion.div>
-                        </motion.div>
-                    </div>
-                )}
+
 
                 {/* Content Container */}
                 <div className="relative z-60 w-full max-w-sm px-6 pointer-events-none mb-4">

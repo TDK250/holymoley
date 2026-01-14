@@ -1542,7 +1542,8 @@ function MoleListPanel({
                             useAppStore.getState().setIsAddingMole(true);
                             useAppStore.getState().setSelectedMoleId(null);
                         }}
-                        className="flex items-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 shadow-lg shadow-rose-500/20"
+                        className={`flex items-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 shadow-lg shadow-rose-500/20 ${tutorialStep === 4 ? "animate-pulse ring-4 ring-rose-500/50 z-50 relative" : ""
+                            }`}
                     >
                         <Plus className="w-4 h-4" />
                         New Mole
