@@ -1,7 +1,7 @@
 "use client";
 
 import { useLoader } from "@react-three/fiber";
-import { GLTFLoader, GLTF } from "three/examples/jsm/loaders/GLTFLoader";
+import { GLTFLoader, GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import * as THREE from "three";
 
 const ENCRYPTION_KEY_HEX = process.env.NEXT_PUBLIC_ASSET_ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
@@ -76,7 +76,7 @@ class SecureGLTFLoader extends THREE.Loader {
  * Supports React Suspense.
  */
 export function useSecureGLTF(url: string): GLTF {
-    return useLoader(SecureGLTFLoader, url);
+    return useLoader(SecureGLTFLoader, url) as GLTF;
 }
 
 // Preload helper
