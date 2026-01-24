@@ -1,6 +1,6 @@
 "use client";
 
-import { useGLTF } from "@react-three/drei";
+import { useSecureGLTF } from "@/hooks/useSecureGLTF";
 import { useAppStore, type AppState } from "@/store/appStore";
 import { useLayoutEffect, useMemo } from "react";
 import * as THREE from "three";
@@ -11,9 +11,9 @@ export default function BodyModel() {
     const gender = useAppStore((state: AppState) => state.gender);
     const isAddingMole = useAppStore((state: AppState) => state.isAddingMole);
 
-    // Loading the specific model based on gender
-    const modelPath = gender === "male" ? getAssetPath("/models/male.glb") : getAssetPath("/models/female.glb");
-    const { scene } = useGLTF(modelPath);
+    // Loading the specific encrypted model based on gender
+    const modelPath = gender === "male" ? getAssetPath("/models/male.glb.enc") : getAssetPath("/models/female.glb.enc");
+    const { scene } = useSecureGLTF(modelPath);
 
     const setModelGeometry = useAppStore((state: AppState) => state.setModelGeometry);
 
@@ -87,5 +87,5 @@ export default function BodyModel() {
 }
 
 // Preload models for smoothness
-useGLTF.preload(getAssetPath("/models/male.glb"));
-useGLTF.preload(getAssetPath("/models/female.glb"));
+useSecureGLTF.preload(getAssetPath("/models/male.glb.enc"));
+useSecureGLTF.preload(getAssetPath("/models/female.glb.enc"));

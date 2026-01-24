@@ -28,3 +28,7 @@ cap-browser-temp/
 .agent
 brain
 .gemini*
+
+# 3D Assets (Security)
+public/models/*.glb
+!public/models/*.glb.enc
