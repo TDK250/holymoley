@@ -5,7 +5,7 @@ import {
     Camera, Calendar, MapPin, Search, ChevronRight, Plus, X,
     Trash2, Edit3, Settings, Shield, Lock, Unlock, Download, Upload, RefreshCw,
     Check, ArrowUpDown, SortAsc, SortDesc, ArrowLeftRight, Bell, ShieldCheck,
-    AlertTriangle, Eye, EyeOff, Info, Delete, Star
+    AlertTriangle, Eye, EyeOff, Info, Delete, Star, Sun, Moon, Monitor, Filter, AlertCircle, FileText
 } from "lucide-react";
 import { Camera as CapCamera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -25,6 +25,25 @@ import { NotificationService } from "@/services/notificationService";
 import { ImportExportService } from "@/services/importExportService";
 import { motion, useMotionValue, useTransform, PanInfo, useAnimation } from "framer-motion";
 import TutorialOverlay from "./TutorialOverlay";
+import ExportPDFModal from "./ExportPDFModal";
+
+const ECZEMA_SYMPTOMS = [
+    { id: 'itchy', label: 'Itchy' },
+    { id: 'dry', label: 'Dry / Flaky' },
+    { id: 'red', label: 'Red / Inflamed' },
+    { id: 'burning', label: 'Burning' },
+    { id: 'cracked', label: 'Cracked' },
+    { id: 'bleeding', label: 'Bleeding' },
+];
+
+const ACCENT_PRESETS = [
+    { name: 'Rose', color: '#f43f5e' },
+    { name: 'Emerald', color: '#10b981' },
+    { name: 'Blue', color: '#3b82f6' },
+    { name: 'Amber', color: '#f59e0b' },
+    { name: 'Purple', color: '#a855f7' },
+    { name: 'Slate', color: '#475569' },
+];
 
 export default function UIOverlay() {
     const gender = useAppStore((s) => s.gender);
@@ -48,6 +67,10 @@ export default function UIOverlay() {
     const hasCompletedTutorial = useAppStore((s) => s.tutorialStep === 0 && typeof window !== 'undefined' && localStorage.getItem('tutorial-completed') === 'true');
     const tutorialStep = useAppStore((s) => s.tutorialStep);
     const setTutorialStep = useAppStore((s) => s.setTutorialStep);
+    const theme = useAppStore((s) => s.theme);
+    const setTheme = useAppStore((s) => s.setTheme);
+    const accentColor = useAppStore((s) => s.accentColor);
+    const setAccentColor = useAppStore((s) => s.setAccentColor);
 
     // Moles data (moved to lower declaration with filter)
     const [newLabel, setNewLabel] = useState("");
@@ -65,6 +88,7 @@ export default function UIOverlay() {
     const [showSecurity, setShowSecurity] = useState(false);
     const [showExportWindow, setShowExportWindow] = useState(false);
     const [showImportWindow, setShowImportWindow] = useState(false);
+    const [showPDFExport, setShowPDFExport] = useState(false);
     const [exportPassword, setExportPassword] = useState("");
     const [importPassword, setImportPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -99,6 +123,12 @@ export default function UIOverlay() {
     const [expandedMoleId, setExpandedMoleId] = useState<number | null>(null);
     const [comparisonImageUrl, setComparisonImageUrl] = useState<string | null>(null);
     const [abcdeChecked, setAbcdeChecked] = useState<Set<string>>(new Set());
+
+    const [newType, setNewType] = useState<'mole' | 'eczema' | 'other'>('mole');
+    const [entrySeverity, setEntrySeverity] = useState<number>(5);
+    const [entrySymptoms, setEntrySymptoms] = useState<Set<string>>(new Set());
+    const [entryFlareUp, setEntryFlareUp] = useState(false);
+    const [hoveredGender, setHoveredGender] = useState<'male' | 'female' | null>(null);
 
     const moles = useLiveQuery(() => db.moles.where('gender').equals(gender).toArray(), [gender]);
     const allEntries = useLiveQuery(() => db.entries.toArray()) || [];
@@ -152,6 +182,7 @@ export default function UIOverlay() {
 
     // Handle tutorial start - consolidated into single effect with guard
     useEffect(() => {
+        /* Temporarily disabled tutorial
         const tutorialDone = localStorage.getItem('tutorial-completed');
         const hasSelectedGender = localStorage.getItem('gender-selected');
 
@@ -164,6 +195,7 @@ export default function UIOverlay() {
             tutorialInitializedRef.current = true;
             setTutorialStep(1);
         }
+        */
     }, [showOnboarding]); // Only re-run when showOnboarding changes
 
     // Handle Notification Scheduling
@@ -261,7 +293,8 @@ export default function UIOverlay() {
                 gender,
                 position: tempMolePosition,
                 normal: tempMoleNormal || undefined,
-                createdAt: Date.now()
+                createdAt: Date.now(),
+                type: newType
             });
             console.log("Mole added with ID:", id);
 
@@ -269,6 +302,7 @@ export default function UIOverlay() {
             setTempMolePosition(null);
             setTempMoleNormal(null);
             setNewLabel("");
+            setNewType("mole");
             setIsAddingMole(false);
 
             // Re-select the newly created mole immediately to show detail view
@@ -287,6 +321,9 @@ export default function UIOverlay() {
         setEntryTexture("");
         setEntryNotes("");
         setEntryABCDE(new Set());
+        setEntrySeverity(5);
+        setEntrySymptoms(new Set());
+        setEntryFlareUp(false);
         setEntryPhoto(null);
         setEditingEntryId(null);
     };
@@ -376,6 +413,8 @@ export default function UIOverlay() {
         setEntryTexture(entry.texture || "");
         setEntryNotes(entry.notes || "");
         setEntryABCDE(new Set(entry.abcde || []));
+        setEntrySeverity(entry.severity || 5);
+        setEntrySymptoms(new Set(entry.symptoms || []));
         setEntryPhoto(entry.photo || null);
         setShowAddEntry(true);
     };
@@ -390,6 +429,9 @@ export default function UIOverlay() {
             texture: entryTexture,
             notes: entryNotes,
             abcde: Array.from(entryABCDE),
+            severity: entrySeverity,
+            symptoms: Array.from(entrySymptoms),
+            flareUp: entryFlareUp,
             photo: entryPhoto || undefined
         };
 
@@ -415,24 +457,30 @@ export default function UIOverlay() {
         <div className="fixed inset-0 pointer-events-none z-10">
             {/* Onboarding Modal */}
             {showOnboarding && (
-                <div className="fixed inset-0 bg-black/95 backdrop-blur-md pointer-events-auto z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-white/95 dark:bg-black/95 backdrop-blur-md pointer-events-auto z-50 flex items-center justify-center p-4">
                     <div className="glass rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-white/10 animate-fade-in">
-                        <h2 className="text-3xl font-bold mb-3 text-white">Welcome</h2>
-                        <p className="text-slate-400 mb-8 leading-relaxed">
+                        <h2 className="text-3xl font-bold mb-3 text-slate-900 dark:text-white">Welcome</h2>
+                        <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
                             Select your body type to get started. This will be your base model for tracking.
                         </p>
 
                         <div className="grid grid-cols-2 gap-4">
                             <button
                                 onClick={() => handleSelectGender('female')}
-                                className="bg-slate-800 hover:bg-rose-500 hover:border-rose-400 border-2 border-slate-700 text-white py-6 rounded-2xl font-bold transition-all flex flex-col items-center gap-2 group"
+                                onMouseEnter={() => setHoveredGender('female')}
+                                onMouseLeave={() => setHoveredGender(null)}
+                                className="bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white py-6 rounded-2xl font-bold transition-all flex flex-col items-center gap-2 group"
+                                style={hoveredGender === 'female' ? { backgroundColor: `${accentColor}22`, borderColor: accentColor } : {}}
                             >
                                 <span className="text-2xl group-hover:scale-110 transition-transform">👩</span>
                                 Female
                             </button>
                             <button
                                 onClick={() => handleSelectGender('male')}
-                                className="bg-slate-800 hover:bg-blue-500 hover:border-blue-400 border-2 border-slate-700 text-white py-6 rounded-2xl font-bold transition-all flex flex-col items-center gap-2 group"
+                                onMouseEnter={() => setHoveredGender('male')}
+                                onMouseLeave={() => setHoveredGender(null)}
+                                className="bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white py-6 rounded-2xl font-bold transition-all flex flex-col items-center gap-2 group"
+                                style={hoveredGender === 'male' ? { backgroundColor: `${accentColor}22`, borderColor: accentColor } : {}}
                             >
                                 <span className="text-2xl group-hover:scale-110 transition-transform">👨</span>
                                 Male
@@ -444,10 +492,10 @@ export default function UIOverlay() {
 
             {/* Add Entry Modal */}
             {showAddEntry && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-50 flex items-center justify-center p-4">
-                    <div className="glass rounded-3xl p-6 max-w-md w-full shadow-2xl border border-white/10 overflow-hidden flex flex-col max-h-[85vh] animate-slide-up">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto z-50 flex items-center justify-center p-4">
+                    <div className="rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200 dark:border-white/10 overflow-hidden flex flex-col max-h-[85vh] animate-slide-up bg-white dark:bg-slate-900">
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold text-white">
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                                 {editingEntryId ? 'Update Check-up' : 'New Check-up'}
                             </h2>
                             <button
@@ -455,23 +503,26 @@ export default function UIOverlay() {
                                     setShowAddEntry(false);
                                     resetEntryForm();
                                 }}
-                                className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+                                className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white rounded-full hover:bg-white/10 transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto space-y-6 pr-2 -mr-2">
+                        <div className="flex-1 overflow-y-auto space-y-6 px-1">
                             {/* Photo Documentation */}
                             <div className="space-y-4">
                                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Photo Documentation</p>
 
                                 {entryPhoto ? (
-                                    <div className="relative group rounded-2xl overflow-hidden border border-white/10 shadow-xl bg-slate-800/30">
+                                    <div className="relative group rounded-2xl overflow-hidden border border-white/10 shadow-xl bg-slate-200 dark:bg-slate-800/30">
                                         <img src={entryPhoto} alt="Mole preview" className="w-full aspect-video object-cover" />
                                         <button
                                             onClick={() => setEntryPhoto(null)}
-                                            className="absolute top-3 right-3 p-2 bg-red-500/80 text-white rounded-full hover:bg-red-500 transition-colors backdrop-blur-sm shadow-lg"
+                                            className="absolute top-3 right-3 p-2 bg-slate-900/50 text-white rounded-full hover:bg-slate-900/80 transition-colors backdrop-blur-sm shadow-lg"
+                                            style={{ '--hover-bg': accentColor } as any}
+                                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = accentColor; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; }}
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -480,16 +531,19 @@ export default function UIOverlay() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <button
                                             onClick={() => handleEntryPhotoUpload(CameraSource.Camera)}
-                                            className="flex flex-col items-center justify-center p-6 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-rose-500/30 transition-all group/cam"
+                                            className="flex flex-col items-center justify-center p-6 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-all group/cam"
+                                            style={{ ':hover': { borderColor: accentColor } } as any}
                                         >
-                                            <div className="w-12 h-12 rounded-full bg-rose-500/20 flex items-center justify-center text-rose-400 mb-3 group-hover/cam:scale-110 transition-transform">
+                                            <div className="w-12 h-12 rounded-full flex items-center justify-center mb-3 group-hover/cam:scale-110 transition-transform"
+                                                style={{ backgroundColor: `${accentColor}22`, color: accentColor }}
+                                            >
                                                 <Camera className="w-6 h-6" />
                                             </div>
                                             <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Camera</span>
                                         </button>
                                         <button
                                             onClick={() => handleEntryPhotoUpload(CameraSource.Photos)}
-                                            className="flex flex-col items-center justify-center p-6 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-blue-500/30 transition-all group/gal"
+                                            className="flex flex-col items-center justify-center p-6 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:bg-slate-200 dark:hover:bg-white/10 hover:border-blue-500/30 transition-all group/gal"
                                         >
                                             <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 mb-3 group-hover/gal:scale-110 transition-transform">
                                                 <MapPin className="w-6 h-6 rotate-45" />
@@ -508,7 +562,8 @@ export default function UIOverlay() {
                                         type="date"
                                         value={entryDate}
                                         onChange={(e) => setEntryDate(e.target.value)}
-                                        className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+                                        className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2"
+                                        style={{ '--tw-ring-color': `${accentColor}80` } as any}
                                     />
                                 </div>
                                 {/* Size */}
@@ -520,7 +575,8 @@ export default function UIOverlay() {
                                         placeholder="e.g. 5"
                                         value={entrySize}
                                         onChange={(e) => setEntrySize(e.target.value)}
-                                        className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+                                        className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2"
+                                        style={{ '--tw-ring-color': `${accentColor}80` } as any}
                                     />
                                 </div>
                             </div>
@@ -533,16 +589,17 @@ export default function UIOverlay() {
                                     placeholder="e.g. Smooth, Raised, Rough..."
                                     value={entryTexture}
                                     onChange={(e) => setEntryTexture(e.target.value)}
-                                    className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+                                    className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2"
+                                    style={{ '--tw-ring-color': `${accentColor}80` } as any}
                                 />
                             </div>
 
-                            {/* ABCDE Checklist - Inline Diagnostic Tool */}
-                            <div className="space-y-3 p-4 rounded-2xl bg-slate-800/30 border border-slate-700/50">
+                            {/* Simplified Entry Form - Always show ABCDE for moles */}
+                            <div className="space-y-3 p-4 rounded-2xl bg-slate-200 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700/50">
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-2">
-                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">ABCDE Check</p>
-                                        <div className="px-1.5 py-0.5 rounded-md bg-white/5 border border-white/5 text-[10px] font-bold text-slate-500">
+                                        <p className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">ABCDE Check</p>
+                                        <div className="px-1.5 py-0.5 rounded-md bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 text-[10px] font-bold text-slate-500">
                                             {entryABCDE.size} / 5
                                         </div>
                                     </div>
@@ -560,27 +617,30 @@ export default function UIOverlay() {
                                                     setEntryABCDE(newSet);
                                                 }}
                                                 className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${isChecked
-                                                    ? 'bg-rose-500/10 border-rose-500/30'
-                                                    : 'bg-slate-800 border-slate-700 hover:bg-slate-700'
+                                                    ? 'border-transparent'
+                                                    : 'bg-white dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-700'
                                                     }`}
+                                                style={isChecked ? { backgroundColor: `${accentColor}15`, borderColor: `${accentColor}30` } : {}}
                                             >
                                                 <div className="flex items-center gap-3 pr-2">
-                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black flex-shrink-0 transition-colors ${isChecked ? 'bg-rose-500 text-white shadow-md' : 'bg-slate-900 text-slate-500'
-                                                        }`}>
+                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black flex-shrink-0 transition-colors ${isChecked ? 'text-slate-900 dark:text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}
+                                                        style={isChecked ? { backgroundColor: accentColor } : {}}
+                                                    >
                                                         {isChecked ? <Check className="w-4 h-4" /> : item.letter}
                                                     </div>
                                                     <div className="text-left">
-                                                        <p className={`text-sm font-bold ${isChecked ? 'text-white' : 'text-slate-300'}`}>
+                                                        <p className={`text-sm font-bold ${isChecked ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-300'}`}>
                                                             {item.title}
                                                         </p>
-                                                        <p className={`text-[10px] leading-tight mt-0.5 ${isChecked ? 'text-rose-200/70' : 'text-slate-500'}`}>
+                                                        <p className={`text-[10px] leading-tight mt-0.5 ${isChecked ? 'text-slate-900 dark:text-white/70' : 'text-slate-500'}`}
+                                                        >
                                                             {item.desc}
                                                         </p>
                                                     </div>
                                                 </div>
                                                 {isChecked && (
-                                                    <div className="text-[10px] font-bold text-rose-400 uppercase tracking-wider">
-                                                        Positive
+                                                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: accentColor }}>
+                                                        Selected
                                                     </div>
                                                 )}
                                             </button>
@@ -597,373 +657,457 @@ export default function UIOverlay() {
                                     rows={3}
                                     value={entryNotes}
                                     onChange={(e) => setEntryNotes(e.target.value)}
-                                    className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50 resize-none"
+                                    className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 resize-none"
+                                    style={{ '--tw-ring-color': `${accentColor}80` } as any}
                                 ></textarea>
                             </div>
-                        </div>
+                        </div >
 
                         <button
                             onClick={handleSaveEntry}
-                            className="w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-xl font-bold transition-all shadow-lg shadow-rose-500/20 mt-6 active:scale-[0.98]"
+                            className="w-full text-slate-900 dark:text-white py-4 rounded-2xl font-bold transition-all shadow-lg mt-6 active:scale-[0.98]"
+                            style={{ backgroundColor: accentColor, boxShadow: `0 10px 15px -3px ${accentColor}33` }}
                         >
-                            {editingEntryId ? 'Update Entry' : 'Save Entry'}
+                            Record New Entry
                         </button>
-                    </div>
-                </div>
-            )}
+                    </div >
+                </div >
+            )
+            }
 
             {/* Settings Panel */}
-            {showSettings && (
-                <div
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto z-40 flex items-end sm:items-center justify-center px-4 pb-12 pt-4 fade-in"
-                    onClick={() => !showResetConfirm && setShowSettings(false)}
-                >
+            {
+                showSettings && (
                     <div
-                        className="glass rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-700/50 bg-slate-900/90 flex flex-col max-h-[90vh] animate-slide-up"
-                        onClick={(e) => e.stopPropagation()}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto z-40 flex items-end sm:items-center justify-center px-4 pb-12 pt-4 fade-in"
+                        onClick={() => !showResetConfirm && setShowSettings(false)}
                     >
-                        {!showResetConfirm ? (
-                            <div className="flex flex-col h-full overflow-hidden">
-                                <div className="flex items-center justify-between mb-6 shrink-0">
-                                    <h2 className="text-xl font-bold text-white">Settings</h2>
-                                    <button onClick={() => setShowSettings(false)} className="p-2 -mr-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors">
-                                        <X className="w-5 h-5" />
-                                    </button>
-                                </div>
-
-                                <div className="space-y-4 overflow-y-auto pr-2 -mr-2 pb-2">
-                                    {/* Reminders Section */}
-                                    <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <Bell className="w-4 h-4 text-rose-400" />
-                                                <div className="flex flex-col">
-                                                    <p className="font-bold text-white tracking-wide">Smart Reminders</p>
-                                                    <p className="text-[10px] text-slate-400">Notify if inactive for 30 days</p>
-                                                </div>
-                                            </div>
-                                            <label className="relative inline-flex items-center cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    className="sr-only peer"
-                                                    checked={smartRemindersEnabled}
-                                                    onChange={(e) => setSmartRemindersEnabled(e.target.checked)}
-                                                />
-                                                <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    {/* App Lock Section */}
-                                    <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <div className="flex items-center gap-2">
-                                                <Lock className="w-4 h-4 text-rose-400" />
-                                                <div className="flex flex-col">
-                                                    <p className="font-bold text-white tracking-wide">App Lock</p>
-                                                    <p className="text-[10px] text-slate-400">Require PIN to open app</p>
-                                                </div>
-                                            </div>
-                                            <label className="relative inline-flex items-center cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    className="sr-only peer"
-                                                    checked={hasPin}
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) {
-                                                            setPinFlow('setup');
-                                                            setPinStep('enter');
-                                                            setPinInput("");
-                                                            setTempPin("");
-                                                            setShowPinSetup(true);
-                                                        } else {
-                                                            setPinFlow('remove');
-                                                            setPinStep('enter');
-                                                            setPinInput("");
-                                                            setShowPinSetup(true);
-                                                        }
-                                                    }}
-                                                />
-                                                <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
-                                            </label>
-                                        </div>
-                                        {hasPin && (
-                                            <button
-                                                onClick={() => {
-                                                    setPinFlow('change');
-                                                    setPinStep('current');
-                                                    setPinInput("");
-                                                    setShowPinSetup(true);
-                                                }}
-                                                className="w-full text-xs text-rose-400 font-bold uppercase tracking-wider bg-slate-800 hover:bg-slate-700 py-2 rounded-lg transition-colors border border-slate-700"
-                                            >
-                                                Change PIN
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {/* Security & Data Section */}
-                                    <div className="space-y-2">
-                                        <button
-                                            onClick={() => { setShowSecurity(true); }}
-                                            className="w-full p-4 rounded-xl bg-slate-800/50 border border-slate-700 hover:bg-slate-800 transition-colors flex items-center justify-between group"
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                                                <span className="text-sm font-bold text-white tracking-wide">Security & Privacy</span>
-                                            </div>
-                                            <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white transition-colors" />
+                        <div
+                            className="rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-900 flex flex-col max-h-[90vh] animate-slide-up"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {!showResetConfirm ? (
+                                <div className="flex flex-col h-full overflow-hidden">
+                                    <div className="flex items-center justify-between mb-6 shrink-0">
+                                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Settings</h2>
+                                        <button onClick={() => setShowSettings(false)} className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white rounded-full hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
+                                            <X className="w-5 h-5" />
                                         </button>
-
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <button
-                                                onClick={() => setShowExportWindow(true)}
-                                                className="p-3 rounded-xl bg-slate-800/50 border border-slate-700 hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 py-4"
-                                            >
-                                                <Download className="w-4 h-4 text-blue-400" />
-                                                <span className="text-xs font-bold text-white uppercase tracking-wider">Export</span>
-                                            </button>
-                                            <button
-                                                onClick={() => fileInputRef.current?.click()}
-                                                className="p-3 rounded-xl bg-slate-800/50 border border-slate-700 hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 py-4"
-                                            >
-                                                <Upload className="w-4 h-4 text-purple-400" />
-                                                <span className="text-xs font-bold text-white uppercase tracking-wider">Import</span>
-                                            </button>
-                                            <input
-                                                type="file"
-                                                ref={fileInputRef}
-                                                className="hidden"
-                                                accept=".json,.tam"
-                                                onChange={handleImportFile}
-                                            />
-                                        </div>
                                     </div>
 
-                                    <button
-                                        onClick={() => setShowResetConfirm(true)}
-                                        className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 py-4 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 group"
-                                    >
-                                        <AlertTriangle className="w-4 h-4 group-hover:animate-pulse" />
-                                        Reset All Data
-                                    </button>
+                                    <div className="space-y-4 overflow-y-auto pb-2 px-1">
+                                        {/* Temporarily hidden smart reminders */}
+                                        {/* <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+    <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+            <Bell className="w-5 h-5" style={{ color: accentColor }} />
+            <div className="flex flex-col">
+                <p className="font-bold text-slate-900 dark:text-white tracking-wide">Smart Reminders</p>
+                <p className="text-[10px] text-slate-600 dark:text-slate-400">Notify if inactive for 30 days</p>
+            </div>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer">
+            <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={smartRemindersEnabled}
+                onChange={(e) => setSmartRemindersEnabled(e.target.checked)}
+            />
+            <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
+                style={smartRemindersEnabled ? { backgroundColor: accentColor } : {}}
+            ></div>
+        </label>
+    </div>
+</div> */}
+
+                                        {/* Appearance Section */}
+                                        <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                                            <div className="flex flex-col gap-3">
+                                                <div className="flex items-center gap-2">
+                                                    <Sun className="w-5 h-5" style={{ color: accentColor }} />
+                                                    <p className="font-bold text-slate-900 dark:text-white tracking-wide">Appearance</p>
+                                                </div>
+                                                <div className="flex p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
+                                                    {[
+                                                        { id: 'light', icon: <Sun className="w-4 h-4" />, label: 'Light' },
+                                                        { id: 'dark', icon: <Moon className="w-4 h-4" />, label: 'Dark' }
+                                                    ].map((t) => (
+                                                        <button
+                                                            key={t.id}
+                                                            onClick={() => { haptics.selection(); setTheme(t.id as any); }}
+                                                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${theme === t.id
+                                                                ? 'text-slate-900 dark:text-white shadow-lg'
+                                                                : 'text-slate-500 hover:text-slate-300'
+                                                                }`}
+                                                            style={theme === t.id ? { backgroundColor: accentColor } : {}}
+                                                        >
+                                                            {t.icon}
+                                                            <span>{t.label}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Highlight Color Section */}
+                                        <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                                            <div className="flex flex-col gap-3">
+                                                <div className="flex items-center gap-2">
+                                                    <RefreshCw className="w-5 h-5" style={{ color: accentColor }} />
+                                                    <p className="font-bold text-slate-900 dark:text-white tracking-wide">Highlight Color</p>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2.5 px-1">
+                                                    {ACCENT_PRESETS.map((preset) => (
+                                                        <button
+                                                            key={preset.color}
+                                                            onClick={() => { haptics.selection(); setAccentColor(preset.color); }}
+                                                            className={`w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${accentColor === preset.color ? 'border-white scale-110 shadow-lg' : 'border-transparent hover:scale-105'
+                                                                }`}
+                                                            style={{ backgroundColor: preset.color }}
+                                                            title={preset.name}
+                                                        >
+                                                            {accentColor === preset.color && <Check className="w-4 h-4 text-white" />}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* App Lock Section */}
+                                        <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <Lock className="w-5 h-5" style={{ color: accentColor }} />
+                                                    <div className="flex flex-col">
+                                                        <p className="font-bold text-slate-900 dark:text-white tracking-wide">App Lock</p>
+                                                        <p className="text-[10px] text-slate-600 dark:text-slate-400">Require PIN to open app</p>
+                                                    </div>
+                                                </div>
+                                                <label className="relative inline-flex items-center cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        className="sr-only peer"
+                                                        checked={hasPin}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) {
+                                                                setPinFlow('setup');
+                                                                setPinStep('enter');
+                                                                setPinInput("");
+                                                                setTempPin("");
+                                                                setShowPinSetup(true);
+                                                            } else {
+                                                                setPinFlow('remove');
+                                                                setPinStep('enter');
+                                                                setPinInput("");
+                                                                setShowPinSetup(true);
+                                                            }
+                                                        }}
+                                                    />
+                                                    <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                                                </label>
+                                            </div>
+                                            {hasPin && (
+                                                <button
+                                                    onClick={() => {
+                                                        setPinFlow('change');
+                                                        setPinStep('current');
+                                                        setPinInput("");
+                                                        setShowPinSetup(true);
+                                                    }}
+                                                    className="w-full text-xs font-bold uppercase tracking-wider bg-slate-200 dark:bg-slate-800 hover:bg-slate-700 py-2 rounded-lg transition-colors border border-slate-200 dark:border-slate-700"
+                                                    style={{ color: accentColor }}
+                                                >
+                                                    Change PIN
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {/* Security & Data Section */}
+                                        <div className="space-y-2">
+                                            <button
+                                                onClick={() => { setShowSecurity(true); }}
+                                                className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:bg-slate-800 transition-colors flex items-center justify-between group"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <ShieldCheck className="w-4 h-4" style={{ color: accentColor }} />
+                                                    <span className="text-sm font-bold text-slate-900 dark:text-white tracking-wide">Security & Privacy</span>
+                                                </div>
+                                                <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-slate-900 dark:text-white transition-colors" />
+                                            </button>
+
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <button
+                                                    onClick={() => setShowExportWindow(true)}
+                                                    className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:bg-slate-800 transition-colors flex items-center justify-center gap-2 py-4"
+                                                >
+                                                    <Download className="w-4 h-4" style={{ color: accentColor }} />
+                                                    <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Export</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:bg-slate-800 transition-colors flex items-center justify-center gap-2 py-4"
+                                                >
+                                                    <Upload className="w-4 h-4" style={{ color: accentColor }} />
+                                                    <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Import</span>
+                                                </button>
+                                                <input
+                                                    type="file"
+                                                    ref={fileInputRef}
+                                                    className="hidden"
+                                                    accept=".json,.tam"
+                                                    onChange={handleImportFile}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Temporarily hidden PDF generation */}
+                                        {/* <button
+    onClick={() => setShowPDFExport(true)}
+    className="w-full p-3 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:bg-slate-800 transition-colors flex items-center justify-center gap-2 py-4 mt-2"
+>
+    <FileText className="w-4 h-4" style={{ color: accentColor }} />
+    <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Generate PDF Report</span>
+</button> */}
+
+                                        <button
+                                            onClick={() => setShowResetConfirm(true)}
+                                            className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 py-4 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 group"
+                                        >
+                                            <AlertTriangle className="w-4 h-4 group-hover:animate-pulse" />
+                                            Reset All Data
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="text-center mb-6">
+                                        <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4 animate-bounce">
+                                            <AlertTriangle className="w-8 h-8 text-red-500" />
+                                        </div>
+                                        <h2 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">Are you sure?</h2>
+                                        <p className="text-slate-600 dark:text-slate-400 text-sm">
+                                            This will permanently delete all your tracked moles, photos, and history. You won't be able to undo this.
+                                        </p>
+                                    </div>
+
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={() => setShowResetConfirm(false)}
+                                            className="flex-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-700 text-slate-900 dark:text-white py-3 rounded-xl font-medium transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={handleResetData}
+                                            className="flex-1 bg-red-500 hover:bg-red-600 text-slate-900 dark:text-white py-3 rounded-xl font-medium transition-colors shadow-lg shadow-red-500/20"
+                                        >
+                                            Yes, Reset
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Security Explanation Modal */}
+            {
+                showSecurity && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[70] flex items-end sm:items-center justify-center px-4 pb-12 pt-4">
+                        <div
+                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-slide-up"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between mb-6 shrink-0">
+                                <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <ShieldCheck className="w-6 h-6 text-emerald-400" />
+                                    Privacy Policy
+                                </h2>
+                                <button
+                                    onClick={() => setShowSecurity(false)}
+                                    className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white rounded-full hover:bg-white/10 transition-colors"
+                                >
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto space-y-6 text-slate-600 dark:text-slate-400 pr-1">
+                                <section>
+                                    <h3 className="text-slate-900 dark:text-white font-bold mb-2 flex items-center gap-2">
+                                        <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400">1</div>
+                                        Local-Only Storage
+                                    </h3>
+                                    <p className="text-sm leading-relaxed">
+                                        All your data, including mole locations and photos, is stored exclusively on your device using IndexedDB.
+                                        Each application runs in an isolated "sandbox," meaning other apps cannot access your Track-A-Mole database.
+                                    </p>
+                                </section>
+
+                                <section>
+                                    <h3 className="text-slate-900 dark:text-white font-bold mb-2 flex items-center gap-2">
+                                        <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400">2</div>
+                                        No Cloud Sync
+                                    </h3>
+                                    <p className="text-sm leading-relaxed">
+                                        Track-A-Mole has no backend server and requires no account. Your health data never leaves your device,
+                                        eliminating the risk of a server-side data breach.
+                                    </p>
+                                </section>
+
+                                <section>
+                                    <h3 className="text-slate-900 dark:text-white font-bold mb-2 flex items-center gap-2">
+                                        <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400">3</div>
+                                        Open & Verifiable
+                                    </h3>
+                                    <p className="text-sm leading-relaxed">
+                                        The entire app is Open Source (GPL v3). You can inspect the source code to confirm there are no tracking scripts,
+                                        and monitor network traffic to verify that zero data is transmitted while you use the app.
+                                    </p>
+                                </section>
+
+                                <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 items-start gap-3 flex flex-col">
+                                    <div className="flex gap-2">
+                                        <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                                            Since there is no cloud backup, your data is lost if you lose your device or clear your browser data.
+                                            Use the <strong>Export</strong> feature in settings to create your own secure backups.
+                                        </p>
+                                    </div>
+                                    <div className="w-full h-px bg-white/5 my-1" />
+                                    <div className="flex gap-2">
+                                        <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                                            <strong>Disclaimer</strong>: This app is provided "as is" without warranty of any kind. The developers are not responsible for any data loss or medical decisions made based on this app.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                        ) : (
-                            <>
-                                <div className="text-center mb-6">
-                                    <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4 animate-bounce">
-                                        <AlertTriangle className="w-8 h-8 text-red-500" />
-                                    </div>
-                                    <h2 className="text-xl font-bold mb-2 text-white">Are you sure?</h2>
-                                    <p className="text-slate-400 text-sm">
-                                        This will permanently delete all your tracked moles, photos, and history. You won't be able to undo this.
-                                    </p>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Export Password Modal */}
+            {
+                showExportWindow && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-[70] flex items-end sm:items-center justify-center px-4 pb-12 pt-4">
+                        <div className="glass border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-slide-up">
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Secure Export</h2>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm mb-6">
+                                Create an encrypted backup. If you set a password, you will need it to restore your data.
+                            </p>
+
+                            <div className="space-y-4">
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="Optional Password"
+                                        value={exportPassword}
+                                        onChange={(e) => setExportPassword(e.target.value)}
+                                        className="w-full bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none"
+                                        style={{ borderColor: accentColor }}
+                                    />
+                                    <button
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-900 dark:text-white"
+                                    >
+                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
                                 </div>
 
                                 <div className="flex gap-3">
                                     <button
-                                        onClick={() => setShowResetConfirm(false)}
-                                        className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-medium transition-colors"
+                                        onClick={() => setShowExportWindow(false)}
+                                        className="flex-1 bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white py-3 rounded-xl font-medium"
                                     >
                                         Cancel
                                     </button>
                                     <button
-                                        onClick={handleResetData}
-                                        className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-medium transition-colors shadow-lg shadow-red-500/20"
+                                        onClick={handleExport}
+                                        className="flex-1 text-slate-900 dark:text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"
+                                        style={{ backgroundColor: accentColor }}
                                     >
-                                        Yes, Reset
+                                        {exportPassword ? <Lock className="w-4 h-4" /> : <Download className="w-4 h-4" />}
+                                        Export
                                     </button>
                                 </div>
-                            </>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* Security Explanation Modal */}
-            {showSecurity && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[70] flex items-end sm:items-center justify-center px-4 pb-12 pt-4">
-                    <div
-                        className="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-slide-up"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="flex items-center justify-between mb-6 shrink-0">
-                            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                                <ShieldCheck className="w-6 h-6 text-emerald-400" />
-                                Privacy Policy
-                            </h2>
-                            <button
-                                onClick={() => setShowSecurity(false)}
-                                className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
-                            >
-                                <X className="w-6 h-6" />
-                            </button>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto space-y-6 text-slate-300 pr-2 -mr-2">
-                            <section>
-                                <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-                                    <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400">1</div>
-                                    Local-Only Storage
-                                </h3>
-                                <p className="text-sm leading-relaxed">
-                                    All your data, including mole locations and photos, is stored exclusively on your device using IndexedDB.
-                                    Each application runs in an isolated "sandbox," meaning other apps cannot access your Track-A-Mole database.
-                                </p>
-                            </section>
-
-                            <section>
-                                <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-                                    <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400">2</div>
-                                    No Cloud Sync
-                                </h3>
-                                <p className="text-sm leading-relaxed">
-                                    Track-A-Mole has no backend server and requires no account. Your health data never leaves your device,
-                                    eliminating the risk of a server-side data breach.
-                                </p>
-                            </section>
-
-                            <section>
-                                <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-                                    <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400">3</div>
-                                    Open & Verifiable
-                                </h3>
-                                <p className="text-sm leading-relaxed">
-                                    The entire app is Open Source (GPL v3). You can inspect the source code to confirm there are no tracking scripts,
-                                    and monitor network traffic to verify that zero data is transmitted while you use the app.
-                                </p>
-                            </section>
-
-                            <div className="p-4 rounded-2xl bg-slate-800/50 border border-slate-700/50 items-start gap-3 flex flex-col">
-                                <div className="flex gap-2">
-                                    <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                                    <p className="text-xs text-slate-400 leading-normal">
-                                        Since there is no cloud backup, your data is lost if you lose your device or clear your browser data.
-                                        Use the <strong>Export</strong> feature in settings to create your own secure backups.
-                                    </p>
-                                </div>
-                                <div className="w-full h-px bg-white/5 my-1" />
-                                <div className="flex gap-2">
-                                    <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                                    <p className="text-xs text-slate-400 leading-normal">
-                                        <strong>Disclaimer</strong>: This app is provided "as is" without warranty of any kind. The developers are not responsible for any data loss or medical decisions made based on this app.
-                                    </p>
-                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-
-            {/* Export Password Modal */}
-            {showExportWindow && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-[70] flex items-end sm:items-center justify-center px-4 pb-12 pt-4">
-                    <div className="glass border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-slide-up">
-                        <h2 className="text-xl font-bold text-white mb-2">Secure Export</h2>
-                        <p className="text-slate-400 text-sm mb-6">
-                            Create an encrypted backup. If you set a password, you will need it to restore your data.
-                        </p>
-
-                        <div className="space-y-4">
-                            <div className="relative">
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    placeholder="Optional Password"
-                                    value={exportPassword}
-                                    onChange={(e) => setExportPassword(e.target.value)}
-                                    className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-rose-500"
-                                />
-                                <button
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
-                                >
-                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                </button>
-                            </div>
-
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setShowExportWindow(false)}
-                                    className="flex-1 bg-slate-800 text-white py-3 rounded-xl font-medium"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleExport}
-                                    className="flex-1 bg-rose-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"
-                                >
-                                    {exportPassword ? <Lock className="w-4 h-4" /> : <Download className="w-4 h-4" />}
-                                    Export
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Import Password Modal */}
-            {showImportWindow && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-[70] flex items-end sm:items-center justify-center px-4 pb-12 pt-4">
-                    <div className="glass border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-slide-up">
-                        <h2 className="text-xl font-bold text-white mb-2">Restoring Data</h2>
-                        <p className="text-slate-400 text-sm mb-6">
-                            This encrypted backup requires a password to decrypt.
-                        </p>
+            {
+                showImportWindow && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto z-[70] flex items-end sm:items-center justify-center px-4 pb-12 pt-4">
+                        <div className="glass border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-slide-up">
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Restoring Data</h2>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm mb-6">
+                                This encrypted backup requires a password to decrypt.
+                            </p>
 
-                        <div className="space-y-4">
-                            <input
-                                type="password"
-                                placeholder="Enter backup password"
-                                value={importPassword}
-                                onChange={(e) => setImportPassword(e.target.value)}
-                                className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-rose-500"
-                                autoFocus
-                            />
+                            <div className="space-y-4">
+                                <input
+                                    type="password"
+                                    placeholder="Enter backup password"
+                                    value={importPassword}
+                                    onChange={(e) => setImportPassword(e.target.value)}
+                                    className="w-full bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-rose-500"
+                                    autoFocus
+                                />
 
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => { setShowImportWindow(false); setImportPassword(""); }}
-                                    className="flex-1 bg-slate-800 text-white py-3 rounded-xl font-medium"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handlePasswordImport}
-                                    className="flex-1 bg-rose-500 text-white py-3 rounded-xl font-bold"
-                                >
-                                    Decrypt & Restore
-                                </button>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => { setShowImportWindow(false); setImportPassword(""); }}
+                                        className="flex-1 bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white py-3 rounded-xl font-medium"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handlePasswordImport}
+                                        className="flex-1 bg-rose-500 text-slate-900 dark:text-white py-3 rounded-xl font-bold"
+                                    >
+                                        Decrypt & Restore
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
+
+            <ExportPDFModal
+                isOpen={showPDFExport}
+                onClose={() => setShowPDFExport(false)}
+                moles={moles || []}
+            />
 
             {/* Mole Deletion Confirmation */}
             {
                 moleToDelete && (
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[80] flex items-center justify-center p-4">
                         <div
-                            className="bg-slate-900 border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center animate-fade-in"
+                            className="bg-white dark:bg-slate-900 border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center animate-fade-in"
                         >
                             <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
                                 <Trash2 className="w-8 h-8 text-red-500" />
                             </div>
-                            <h2 className="text-xl font-bold mb-2 text-white">Delete Mole?</h2>
-                            <p className="text-slate-400 text-sm mb-8">
+                            <h2 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">Delete Mole?</h2>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm mb-8">
                                 This will permanently delete this mole and all its check-up history. This action cannot be undone.
                             </p>
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => setMoleToDelete(null)}
-                                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-medium transition-colors"
+                                    className="flex-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-700 text-slate-900 dark:text-white py-3 rounded-xl font-medium transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={confirmDeleteMole}
-                                    className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-red-500/20"
+                                    className="flex-1 bg-red-500 hover:bg-red-600 text-slate-900 dark:text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-red-500/20"
                                 >
                                     Delete
                                 </button>
@@ -978,25 +1122,25 @@ export default function UIOverlay() {
                 entryToDelete && (
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto z-[80] flex items-center justify-center p-4">
                         <div
-                            className="bg-slate-900 border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center animate-fade-in"
+                            className="bg-white dark:bg-slate-900 border border-red-500/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center animate-fade-in"
                         >
                             <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
                                 <AlertTriangle className="w-8 h-8 text-red-400" />
                             </div>
-                            <h2 className="text-xl font-bold mb-2 text-white">Remove Entry?</h2>
-                            <p className="text-slate-400 text-sm mb-8">
+                            <h2 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">Remove Entry?</h2>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm mb-8">
                                 Are you sure you want to remove this check-up record?
                             </p>
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => setEntryToDelete(null)}
-                                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-medium transition-colors"
+                                    className="flex-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-700 text-slate-900 dark:text-white py-3 rounded-xl font-medium transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={confirmDeleteEntry}
-                                    className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-red-500/20"
+                                    className="flex-1 bg-red-500 hover:bg-red-600 text-slate-900 dark:text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-red-500/20"
                                 >
                                     Remove
                                 </button>
@@ -1013,11 +1157,11 @@ export default function UIOverlay() {
                 showPinSetup && (
                     <div className="fixed inset-0 bg-black/90 backdrop-blur-md pointer-events-auto z-[80] flex items-end sm:items-center justify-center px-4 pb-12 pt-4">
                         <div className="w-full max-w-xs flex flex-col items-center animate-slide-up">
-                            <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-6 text-white">
+                            <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center mb-6 text-slate-900 dark:text-white">
                                 <Lock className="w-8 h-8" />
                             </div>
 
-                            <h2 className="text-xl font-bold text-white mb-2">
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
                                 {pinFlow === 'setup' && pinStep === 'enter' && "Create PIN"}
                                 {pinFlow === 'setup' && pinStep === 'confirm' && "Confirm PIN"}
                                 {pinFlow === 'remove' && "Enter Current PIN"}
@@ -1025,14 +1169,14 @@ export default function UIOverlay() {
                                 {pinFlow === 'change' && pinStep === 'enter' && "Enter New PIN"}
                                 {pinFlow === 'change' && pinStep === 'confirm' && "Confirm New PIN"}
                             </h2>
-                            <p className="text-slate-400 mb-8 text-sm text-center">
+                            <p className="text-slate-600 dark:text-slate-400 mb-8 text-sm text-center">
                                 {pinError ? <span className="text-red-500 font-bold">Incorrect PIN. Try again.</span> :
                                     (pinStep === 'confirm' ? "Re-enter to confirm" : "Enter a 4-digit code")}
                             </p>
 
                             <div className="flex gap-4 mb-8">
                                 {[0, 1, 2, 3].map(i => (
-                                    <div key={i} className={`w-4 h-4 rounded-full transition-all ${i < pinInput.length ? 'bg-rose-500' : 'bg-slate-800'}`} />
+                                    <div key={i} className={`w-5 h-5 rounded-full transition-all ${i < pinInput.length ? '' : 'bg-slate-200 dark:bg-slate-800'}`} style={i < pinInput.length ? { backgroundColor: accentColor } : {}} />
                                 ))}
                             </div>
 
@@ -1114,7 +1258,8 @@ export default function UIOverlay() {
                                                 }
                                             }
                                         }}
-                                        className={`aspect-square rounded-full bg-slate-900 border border-slate-800 text-white text-xl font-bold hover:bg-slate-800 active:bg-rose-500 active:border-rose-500 transition-all ${num === 0 ? 'col-start-2' : ''}`}
+                                        className={`aspect-square rounded-full bg-white dark:bg-slate-900 border border-slate-800 text-slate-900 dark:text-white text-2xl font-bold transition-all ${num === 0 ? 'col-start-2' : ''}`}
+                                        style={{ borderBottomColor: accentColor }} // subtle indicator
                                     >
                                         {num}
                                     </button>
@@ -1122,18 +1267,16 @@ export default function UIOverlay() {
                                 <div className="col-start-3 row-start-4 flex justify-center items-center">
                                     <button
                                         onClick={() => setPinInput(prev => prev.slice(0, -1))}
-                                        className="p-4 rounded-full text-slate-400 hover:text-white hover:bg-slate-800"
+                                        className="p-4 rounded-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white hover:bg-slate-200 dark:bg-slate-800"
                                     >
-                                        <Delete className="w-6 h-6" />
-                                        {/* Actually I used X or Trash2 before. Let's use X for backspace or check if Delete is proper lucide icon. Lucide has Delete. */}
-                                        <X className="w-6 h-6" />
+                                        <Trash2 className="w-6 h-6" />
                                     </button>
                                 </div>
                             </div>
 
                             <button
                                 onClick={() => setShowPinSetup(false)}
-                                className="text-slate-500 hover:text-white text-sm font-bold uppercase tracking-wider px-4 py-2"
+                                className="text-slate-500 hover:text-slate-900 dark:text-white text-sm font-bold uppercase tracking-wider px-4 py-2"
                             >
                                 Cancel
                             </button>
@@ -1148,8 +1291,8 @@ export default function UIOverlay() {
                 style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}
             >
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <h1 className="text-xl font-bold text-white flex items-center gap-2">
-                        <span className="text-rose-500 text-2xl">●</span>
+                    <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <span className="text-2xl" style={{ color: accentColor }}>●</span>
                         <span className="tracking-tight">Track-A-Mole</span>
                     </h1>
 
@@ -1159,14 +1302,14 @@ export default function UIOverlay() {
                                 haptics.selection();
                                 triggerCameraReset();
                             }}
-                            className="w-10 h-10 rounded-full glass flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all active:scale-95"
+                            className="w-10 h-10 rounded-full glass flex items-center justify-center text-slate-300 hover:text-slate-900 dark:text-white hover:bg-white/10 transition-all active:scale-95"
                             title="Recenter Camera"
                         >
                             <RefreshCw className="w-5 h-5" />
                         </button>
                         <button
                             onClick={() => setShowSettings(true)}
-                            className="w-10 h-10 rounded-full glass flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all active:scale-95"
+                            className="w-10 h-10 rounded-full glass flex items-center justify-center text-slate-300 hover:text-slate-900 dark:text-white hover:bg-white/10 transition-all active:scale-95"
                         >
                             <Settings className="w-5 h-5" />
                         </button>
@@ -1185,6 +1328,8 @@ export default function UIOverlay() {
                 handleAddMole={handleAddMole}
                 newLabel={newLabel}
                 setNewLabel={setNewLabel}
+                newType={newType}
+                setNewType={setNewType}
                 moles={sortedMoles}
                 sortMode={sortMode}
                 sortDirection={sortDirection}
@@ -1237,11 +1382,18 @@ function DraggableBottomSheet({
     handleDeleteMole, handleUpdateMoleLabel, handleDeleteEntry,
     startEditEntry, editingMoleId, setEditingMoleId, editLabel, setEditLabel,
     setShowAddEntry, resetEntryForm, setMenuHeight, onExpandImage,
-    filterStarred, setFilterStarred, handleToggleStar
+    filterStarred, setFilterStarred, handleToggleStar, newType, setNewType
 }: {
-    // ... other props
-    onExpandImage: (url: string, moleId: number) => void
-} & any) {
+    isMenuOpen: boolean, setIsMenuOpen: (v: boolean) => void, isAddingMole: boolean, selectedMoleId: number | null,
+    handleAddMole: () => void, newLabel: string, setNewLabel: (v: string) => void, moles: any[],
+    sortMode: "updated" | "label", sortDirection: "asc" | "desc", setSortMode: (m: "updated" | "label") => void, setSortDirection: (d: "asc" | "desc") => void,
+    handleDeleteMole: (id: number) => void, handleUpdateMoleLabel: (id: number) => void, handleDeleteEntry: (id: number) => void,
+    startEditEntry: (entry: any) => void, editingMoleId: number | null, setEditingMoleId: (id: number | null) => void,
+    editLabel: string, setEditLabel: (v: string) => void, setShowAddEntry: (v: boolean) => void,
+    resetEntryForm: () => void, setMenuHeight: (h: number) => void, onExpandImage: (url: string, moleId: number) => void,
+    filterStarred: boolean, setFilterStarred: (v: boolean) => void, handleToggleStar: (id: number, current: boolean) => void,
+    newType: 'mole' | 'eczema' | 'other', setNewType: (t: 'mole' | 'eczema' | 'other') => void
+}) {
     const controls = useAnimation();
     const containerRef = useRef<HTMLDivElement>(null);
     const [contentHeight, setContentHeight] = useState(500); // Approximate default
@@ -1323,7 +1475,7 @@ function DraggableBottomSheet({
                     paddingBottom: 'calc(env(safe-area-inset-bottom) + 1.5rem)',
                 }}
             >
-                <div className="max-w-xl mx-auto flex flex-col items-center px-4">
+                <div className="max-w-2xl mx-auto flex flex-col items-center px-4">
                     {/* Pull Handle Area - Enhanced target for easier dragging */}
                     <div className="w-full flex justify-center relative z-20 pt-10 cursor-grab active:cursor-grabbing pb-4 touch-none">
                         <div className="w-12 h-1.5 bg-white/30 rounded-full shadow-lg" />
@@ -1336,6 +1488,8 @@ function DraggableBottomSheet({
                                 onSave={handleAddMole}
                                 label={newLabel}
                                 setLabel={setNewLabel}
+                                type={newType}
+                                setType={setNewType}
                             />
                         ) : selectedMoleId ? (
                             <MoleDetailPanel
@@ -1399,44 +1553,104 @@ function MoleListPanel({
 }) {
     const setSelectedMoleId = useAppStore((s: AppState) => s.setSelectedMoleId);
     const tutorialStep = useAppStore((s: AppState) => s.tutorialStep);
+    const accentColor = useAppStore((s: AppState) => s.accentColor);
+    const filterCondition = useAppStore((s: AppState) => s.filterCondition);
+    const setFilterCondition = useAppStore((s: AppState) => s.setFilterCondition);
     const [showSortMenu, setShowSortMenu] = useState(false);
+    const [showFilterMenu, setShowFilterMenu] = useState(false);
+
+    const filteredMoles = useMemo(() => {
+        let result = moles || [];
+        if (filterStarred) {
+            result = result.filter(m => m.starred);
+        }
+        if (filterCondition !== 'all') {
+            result = result.filter(m => (m.type || 'mole') === filterCondition);
+        }
+        return result;
+    }, [moles, filterStarred, filterCondition]);
 
     return (
         <div
-            className="glass rounded-3xl p-6 max-h-[50vh] flex flex-col border border-white/10 shadow-2xl bg-slate-900/80 pointer-events-auto w-full"
+            className="rounded-3xl p-6 max-h-[50vh] flex flex-col border border-slate-200 dark:border-white/10 shadow-2xl bg-white dark:bg-slate-900 pointer-events-auto w-full"
         >
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                    <h2 className="text-lg font-bold text-white">Your Moles</h2>
-                    <span className="px-3 py-1 rounded-full bg-white/5 text-xs font-medium text-slate-400 border border-white/5">
-                        {moles?.length || 0}
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">Your Moles</h2>
+                    <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-white/5 text-xs font-medium text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/5">
+                        {filteredMoles.length}
                     </span>
                 </div>
 
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => { haptics.selection(); setFilterStarred(!filterStarred); }}
-                        className={`p-2 rounded-xl border transition-all flex items-center gap-2 ${filterStarred ? 'glass bg-amber-500/20 border-amber-500/50 text-amber-500' : 'glass bg-white/5 border-white/5 text-slate-400 hover:text-white'}`}
+                        className={`p-2.5 rounded-xl border transition-all flex items-center justify-center ${filterStarred ? 'bg-amber-500/20 border-amber-500/50 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.15)]' : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white'}`}
                         title="Filter starred moles"
                     >
                         <Star className={`w-4 h-4 ${filterStarred ? 'fill-amber-500' : ''}`} />
-                        <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Starred</span>
                     </button>
+
+                    {/* Temporarily hidden condition filter */}
+                    {/* <div className="relative">
+                        <button
+                            onClick={() => setShowFilterMenu(!showFilterMenu)}
+                            className={`p-2.5 rounded-xl border transition-all flex items-center justify-center ${filterCondition !== 'all' ? 'border-transparent text-slate-900 dark:text-white' : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white'}`}
+                            style={filterCondition !== 'all' ? { backgroundColor: `${accentColor}33`, borderColor: `${accentColor}55`, color: accentColor } : {}}
+                            title="Filter by Condition"
+                        >
+                            <Filter className="w-4 h-4" />
+                        </button>
+
+                        {showFilterMenu && (
+                            <>
+                                <div className="fixed inset-0 z-[100]" onClick={() => setShowFilterMenu(false)} />
+                                <div className="absolute right-0 bottom-full mb-3 w-48 bg-slate-100 dark:bg-slate-800 border border-white/10 rounded-2xl p-2 shadow-2xl z-[101] animate-fade-in origin-bottom">
+                                    <div className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 mb-1">
+                                        Filter Condition
+                                    </div>
+                                    {[
+                                        { id: 'all', label: 'All Types' },
+                                        { id: 'mole', label: 'Moles' },
+                                        { id: 'eczema', label: 'Eczema' },
+                                        { id: 'acne', label: 'Acne' },
+                                        { id: 'psoriasis', label: 'Psoriasis' },
+                                        { id: 'rash', label: 'Rash' },
+                                        { id: 'other', label: 'Other' }
+                                    ].map((type) => (
+                                        <button
+                                            key={type.id}
+                                            onClick={() => {
+                                                setFilterCondition(type.id);
+                                                setShowFilterMenu(false);
+                                                haptics.selection();
+                                            }}
+                                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-colors ${filterCondition === type.id ? 'text-slate-900 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-white/5'}`}
+                                            style={filterCondition === type.id ? { backgroundColor: `${accentColor}22`, color: accentColor } : {}}
+                                        >
+                                            <span>{type.label}</span>
+                                            {filterCondition === type.id && <Check className="w-4 h-4" />}
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div> */}
 
                     <div className="relative">
                         <button
                             onClick={() => setShowSortMenu(!showSortMenu)}
-                            className={`p-2 rounded-xl border transition-all flex items-center gap-2 ${showSortMenu ? 'glass bg-rose-500/20 border-rose-500/50 text-rose-500' : 'glass bg-white/5 border-white/5 text-slate-400 hover:text-white'}`}
+                            className={`p-2.5 rounded-xl border transition-all flex items-center justify-center ${showSortMenu ? 'border-transparent text-slate-900 dark:text-white' : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white'}`}
+                            style={showSortMenu ? { backgroundColor: `${accentColor}33`, borderColor: `${accentColor}55`, color: accentColor } : {}}
                             title="Sort moles"
                         >
-                            <ArrowUpDown className="w-4 h-4" />
-                            <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Sort</span>
+                            <ArrowUpDown className="w-5 h-5" />
                         </button>
 
                         {showSortMenu && (
                             <>
                                 <div className="fixed inset-0 z-[100]" onClick={() => setShowSortMenu(false)} />
-                                <div className="absolute right-0 top-full mt-2 w-56 glass bg-slate-900/95 border border-white/10 rounded-2xl p-2 shadow-2xl z-[101] animate-fade-in">
+                                <div className="absolute right-0 bottom-full mb-3 w-56 bg-slate-100 dark:bg-slate-800 border border-white/10 rounded-2xl p-2 shadow-2xl z-[101] animate-fade-in origin-bottom">
                                     <div className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 mb-1">
                                         Sort By
                                     </div>
@@ -1450,7 +1664,8 @@ function MoleListPanel({
                                             }
                                             setShowSortMenu(false);
                                         }}
-                                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-colors ${sortMode === 'updated' ? 'bg-rose-500/20 text-rose-400' : 'text-slate-300 hover:bg-white/5'}`}
+                                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-colors ${sortMode === 'updated' ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10'}`}
+                                        style={sortMode === 'updated' ? { backgroundColor: `${accentColor}22` } : {}}
                                     >
                                         <div className="flex items-center gap-2">
                                             <Calendar className="w-4 h-4" />
@@ -1470,7 +1685,8 @@ function MoleListPanel({
                                             }
                                             setShowSortMenu(false);
                                         }}
-                                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-colors ${sortMode === 'label' ? 'bg-rose-500/20 text-rose-400' : 'text-slate-300 hover:bg-white/5'}`}
+                                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-colors ${sortMode === 'label' ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10'}`}
+                                        style={sortMode === 'label' ? { backgroundColor: `${accentColor}22` } : {}}
                                     >
                                         <div className="flex items-center gap-2">
                                             <Edit3 className="w-4 h-4" />
@@ -1490,18 +1706,23 @@ function MoleListPanel({
                             useAppStore.getState().setIsAddingMole(true);
                             useAppStore.getState().setSelectedMoleId(null);
                         }}
-                        className={`flex items-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 shadow-lg shadow-rose-500/20 ${tutorialStep === 4 ? "animate-pulse ring-4 ring-rose-500/50 z-50 relative" : ""
+                        className={`flex items-center justify-center text-slate-900 dark:text-white p-2.5 rounded-xl transition-all active:scale-95 shadow-lg ${tutorialStep === 4 ? "animate-pulse ring-4 z-50 relative" : ""
                             }`}
+                        style={{
+                            backgroundColor: accentColor,
+                            boxShadow: `0 10px 15px -3px ${accentColor}33`,
+                            outlineColor: tutorialStep === 4 ? `${accentColor}88` : undefined
+                        }}
+                        title="Add New Mole"
                     >
-                        <Plus className="w-4 h-4" />
-                        New Mole
+                        <Plus className="w-5 h-5" />
                     </button>
                 </div>
             </div>
 
-            {moles?.length === 0 ? (
+            {filteredMoles.length === 0 ? (
                 <div className="text-center py-8">
-                    <div className="w-16 h-16 rounded-2xl bg-slate-800/50 flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center mx-auto mb-4">
                         <MapPin className="w-8 h-8 text-slate-600" />
                     </div>
                     <p className="text-slate-300 font-medium mb-1">No moles tracked yet</p>
@@ -1518,8 +1739,8 @@ function MoleListPanel({
                             <div className="flex items-center gap-4">
                                 <MoleThumbnail moleId={mole.id!} onExpandImage={onExpandImage} />
                                 <div className="text-left">
-                                    <p className="font-semibold text-white">{mole.label}</p>
-                                    <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                                    <p className="font-semibold text-slate-900 dark:text-white">{mole.label}</p>
+                                    <p className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1 mt-0.5">
                                         <Calendar className="w-3 h-3" />
                                         {new Date(mole.createdAt).toLocaleDateString()}
                                     </p>
@@ -1535,7 +1756,7 @@ function MoleListPanel({
                                 >
                                     <Star className={`w-4 h-4 ${mole.starred ? 'fill-amber-500' : ''}`} />
                                 </button>
-                                <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-slate-400" />
+                                <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-slate-600 dark:text-slate-400" />
                             </div>
                         </div>
                     ))}
@@ -1551,10 +1772,11 @@ function MoleThumbnail({ moleId, onExpandImage }: { moleId: number, onExpandImag
         [moleId]
     );
 
+    const accentColor = useAppStore((s: AppState) => s.accentColor);
     if (latestEntry?.photo) {
         return (
             <div
-                className="w-10 h-10 rounded-full overflow-hidden border border-white/10 shadow-inner cursor-pointer active:scale-95 transition-transform"
+                className="w-12 h-12 rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-inner cursor-pointer active:scale-95 transition-transform"
                 onClick={(e) => { e.stopPropagation(); onExpandImage(latestEntry.photo!, moleId); }}
             >
                 <img src={latestEntry.photo} alt="Thumbnail" className="w-full h-full object-cover" />
@@ -1563,25 +1785,29 @@ function MoleThumbnail({ moleId, onExpandImage }: { moleId: number, onExpandImag
     }
 
     return (
-        <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center text-rose-500">
-            <MapPin className="w-5 h-5" />
+        <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center border border-transparent shadow-sm"
+            style={{ backgroundColor: `${accentColor}22`, color: accentColor }}
+        >
+            <MapPin className="w-6 h-6" />
         </div>
     );
 }
 
-function AddMolePanel({ onSave, label, setLabel }: { onSave: () => void, label: string, setLabel: (v: string) => void }) {
+function AddMolePanel({ onSave, label, setLabel, type, setType }: { onSave: () => void, label: string, setLabel: (v: string) => void, type: string, setType: (v: any) => void }) {
     const tempMolePosition = useAppStore((s: AppState) => s.tempMolePosition);
     const setIsAddingMole = useAppStore((s: AppState) => s.setIsAddingMole);
     const setTempMolePosition = useAppStore((s: AppState) => s.setTempMolePosition);
+    const accentColor = useAppStore((s: AppState) => s.accentColor);
 
     return (
         <div
-            className="glass rounded-3xl p-6 border border-rose-500/20 shadow-2xl bg-slate-900/90 pointer-events-auto w-full"
+            className="rounded-3xl p-6 border border-slate-200 dark:border-white/10 shadow-2xl bg-white dark:bg-slate-900 pointer-events-auto w-full"
         >
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h2 className="text-lg font-bold text-white">Track New Mole</h2>
-                    <p className="text-xs text-rose-400 font-medium uppercase tracking-wide mt-1">Setup Mode</p>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">Track New Mole</h2>
+                    <p className="text-[10px] font-bold uppercase tracking-wider mt-1 opacity-70" style={{ color: accentColor }}>Setup Mode</p>
                 </div>
                 <button
                     onClick={() => {
@@ -1589,7 +1815,7 @@ function AddMolePanel({ onSave, label, setLabel }: { onSave: () => void, label: 
                         useAppStore.getState().setTempMolePosition(null);
                         setLabel("");
                     }}
-                    className="p-2 -mr-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+                    className="p-2 -mr-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white rounded-full hover:bg-white/10 transition-colors"
                 >
                     <X className="w-5 h-5" />
                 </button>
@@ -1598,46 +1824,83 @@ function AddMolePanel({ onSave, label, setLabel }: { onSave: () => void, label: 
             <div className="space-y-4 mb-6">
                 {/* Step 1 */}
                 <div className={`p-4 rounded-2xl border transition-all ${!tempMolePosition
-                    ? 'bg-rose-500/10 border-rose-500/30'
-                    : 'bg-slate-800/30 border-slate-700/50 opacity-50'
-                    }`}>
+                    ? 'border-transparent'
+                    : 'bg-slate-100 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700/50 opacity-50'
+                    }`}
+                    style={!tempMolePosition ? { backgroundColor: `${accentColor}15`, borderColor: `${accentColor}30` } : {}}
+                >
                     <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${!tempMolePosition ? 'bg-rose-500 text-white' : 'bg-green-500 text-white'
-                            }`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm text-slate-900 dark:text-white`}
+                            style={{ backgroundColor: !tempMolePosition ? accentColor : '#22c55e' }}
+                        >
                             {!tempMolePosition ? '1' : '✓'}
                         </div>
                         <div>
-                            <p className="font-bold text-white">Tap Body</p>
-                            <p className="text-sm text-slate-400">Locate the mole on the 3D model</p>
+                            <p className="font-bold text-slate-900 dark:text-white">Tap Body</p>
+                            <p className="text-sm text-slate-600 dark:text-slate-400">Locate the mole on the 3D model</p>
                         </div>
                     </div>
                 </div>
 
                 {/* Step 2 */}
                 <div className={`p-4 rounded-2xl border transition-all ${tempMolePosition
-                    ? 'bg-rose-500/10 border-rose-500/30'
-                    : 'bg-slate-800/30 border-slate-700/50 opacity-50'
-                    }`}>
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${!label ? 'bg-slate-700 text-slate-400' : 'bg-rose-500 text-white'
-                            }`}>
+                    ? 'border-transparent'
+                    : 'bg-slate-100 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700/50 opacity-50'
+                    }`}
+                    style={tempMolePosition && !label ? { backgroundColor: `${accentColor}15`, borderColor: `${accentColor}30` } : {}}
+                >
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm text-slate-900 dark:text-white`}
+                            style={{ backgroundColor: label ? '#22c55e' : tempMolePosition ? accentColor : '#475569' }}
+                        >
                             2
                         </div>
-                        <div>
-                            <p className="font-bold text-white">Label It</p>
-                            <p className="text-sm text-slate-400">Give it a recognizable name</p>
+                        <div className="flex-1">
+                            <p className="font-bold text-slate-900 dark:text-white">Identify & Classify</p>
+                            <p className="text-sm text-slate-600 dark:text-slate-400">What are we tracking?</p>
                         </div>
                     </div>
+
                     {tempMolePosition && (
-                        <input
-                            type="text"
-                            value={label}
-                            onChange={(e) => setLabel(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && onSave()}
-                            placeholder="e.g., Right Shoulder"
-                            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-rose-500 transition-colors mt-2"
-                            autoFocus
-                        />
+                        <div className="space-y-4">
+                            {/* Temporarily hidden condition selection */}
+                            {/* <div className="grid grid-cols-3 gap-2">
+                                {[
+                                    { id: 'mole', label: 'Mole' },
+                                    { id: 'eczema', label: 'Eczema' },
+                                    { id: 'acne', label: 'Acne' },
+                                    { id: 'psoriasis', label: 'Psoriasis' },
+                                    { id: 'rash', label: 'Rash' },
+                                    { id: 'other', label: 'Other' }
+                                ].map((t) => (
+                                    <button
+                                        key={t.id}
+                                        onClick={() => { haptics.selection(); setType(t.id); }}
+                                        className={`py-3 px-2 rounded-xl border text-[10px] font-bold uppercase tracking-widest transition-all ${type === t.id
+                                            ? 'text-slate-900 dark:text-white border-transparent'
+                                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-400'
+                                            }`}
+                                        style={type === t.id ? { backgroundColor: accentColor, boxShadow: `0 0 15px ${accentColor}44` } : {}}
+                                    >
+                                        {t.label}
+                                    </button>
+                                ))}
+                            </div> */}
+
+                            <input
+                                type="text"
+                                value={label}
+                                onChange={(e) => setLabel(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && onSave()}
+                                placeholder={type === 'mole' ? "e.g., Right Shoulder Mole" : type === 'eczema' ? "e.g., Elbow Patch" : "Label this spot"}
+                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none transition-colors"
+                                style={{
+                                    borderColor: label ? accentColor : undefined,
+                                    boxShadow: label ? `0 0 10px ${accentColor}22` : undefined
+                                }}
+                                autoFocus
+                            />
+                        </div>
                     )}
                 </div>
             </div>
@@ -1645,7 +1908,11 @@ function AddMolePanel({ onSave, label, setLabel }: { onSave: () => void, label: 
             <button
                 onClick={onSave}
                 disabled={!tempMolePosition || !label}
-                className="w-full bg-rose-500 hover:bg-rose-600 disabled:bg-slate-800 disabled:text-slate-500 text-white py-4 rounded-xl font-bold transition-all disabled:cursor-not-allowed shadow-lg shadow-rose-500/25 flex items-center justify-center gap-2"
+                className="w-full disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 text-slate-900 dark:text-white py-4 rounded-2xl font-bold transition-all disabled:cursor-not-allowed shadow-lg flex items-center justify-center gap-2"
+                style={{
+                    backgroundColor: (!tempMolePosition || !label) ? undefined : accentColor,
+                    boxShadow: (!tempMolePosition || !label) ? undefined : `0 10px 15px -3px ${accentColor}33`
+                }}
             >
                 <Check className="w-5 h-5" />
                 Save Mole
@@ -1682,6 +1949,7 @@ function MoleDetailPanel({
     const selectedMoleId = useAppStore((s: AppState) => s.selectedMoleId);
     const setSelectedMoleId = useAppStore((s: AppState) => s.setSelectedMoleId);
     const setIsAddingMole = useAppStore((s: AppState) => s.setIsAddingMole);
+    const accentColor = useAppStore((s: AppState) => s.accentColor);
     const mole = useLiveQuery(() => selectedMoleId ? db.moles.get(selectedMoleId) : undefined, [selectedMoleId]);
     const entries = useLiveQuery(() => selectedMoleId ? db.entries.where('moleId').equals(selectedMoleId).reverse().toArray() : [], [selectedMoleId]);
 
@@ -1696,7 +1964,7 @@ function MoleDetailPanel({
 
     return (
         <div
-            className="glass rounded-3xl p-6 max-h-[70vh] flex flex-col border border-white/10 shadow-2xl bg-slate-900/90 pointer-events-auto w-full"
+            className="rounded-3xl p-6 max-h-[70vh] flex flex-col border border-slate-200 dark:border-white/10 shadow-2xl bg-white dark:bg-slate-900 pointer-events-auto w-full font-inter"
         >
             <div className="flex items-center justify-between mb-6">
                 <div className="flex-1">
@@ -1705,7 +1973,8 @@ function MoleDetailPanel({
                             <input
                                 value={editLabel}
                                 onChange={(e) => setEditLabel(e.target.value)}
-                                className="bg-slate-800 border-b border-rose-500 text-white font-bold outline-none px-1 w-full max-w-[150px]"
+                                className="bg-slate-100 dark:bg-slate-800 border-b-2 text-slate-900 dark:text-white font-bold outline-none px-2 py-1 rounded-t-lg w-full max-w-[200px]"
+                                style={{ borderBottomColor: accentColor }}
                                 autoFocus
                             />
                             <button onClick={() => onUpdateLabel(activeMole.id!)} className="text-green-500 p-1">
@@ -1717,10 +1986,10 @@ function MoleDetailPanel({
                         </div>
                     ) : (
                         <div className="flex items-center gap-2">
-                            <h2 className="text-xl font-bold text-white">{activeMole.label}</h2>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white">{activeMole.label}</h2>
                             <button
                                 onClick={() => { setEditingMoleId(activeMole.id!); setEditLabel(activeMole.label); }}
-                                className="p-1 text-slate-500 hover:text-white"
+                                className="p-1 text-slate-500 hover:text-slate-900 dark:text-white"
                             >
                                 <Edit3 className="w-3.5 h-3.5" />
                             </button>
@@ -1733,12 +2002,17 @@ function MoleDetailPanel({
                         </div>
                     )}
                     <div className="flex items-center gap-3 mt-1">
-                        <p className="text-xs text-slate-400 flex items-center gap-1">
+                        <p className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
                             Since {new Date(activeMole.createdAt).toLocaleDateString()}
                         </p>
                         <span className="w-1 h-1 rounded-full bg-slate-600" />
-                        <p className="text-xs text-rose-400 font-bold">
+                        {/* Temporarily hidden type badge */}
+                        {/* <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest" style={{ color: accentColor }}>
+                            {activeMole.type || 'mole'}
+                        </p>
+                        <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" /> */}
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-bold">
                             {entries?.length || 0} checks
                         </p>
                     </div>
@@ -1746,7 +2020,10 @@ function MoleDetailPanel({
                 <div className="flex items-center gap-1">
                     <button
                         onClick={() => onDeleteMole(activeMole.id!)}
-                        className="p-2 text-slate-500 hover:text-red-500 rounded-full hover:bg-red-500/10 transition-colors"
+                        className="p-2 text-slate-500 hover:text-white rounded-full transition-colors"
+                        style={{ '--hover-bg': accentColor } as any}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = accentColor; e.currentTarget.style.color = 'white'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = ''; }}
                         title="Delete Mole"
                     >
                         <Trash2 className="w-4 h-4" />
@@ -1757,41 +2034,47 @@ function MoleDetailPanel({
                             setIsAddingMole(false);
                             setEditingMoleId(null);
                         }}
-                        className="p-2 -mr-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+                        className="p-2 -mr-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white rounded-full hover:bg-white/10 transition-colors"
                     >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-4 -mx-2 px-2">
+            <div className="flex-1 overflow-y-auto space-y-4 pr-4">
                 <button
                     onClick={onAddEntry}
-                    className="w-full py-4 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-bold transition-all shadow-lg shadow-rose-500/20 flex items-center justify-center gap-2 group mb-2"
+                    className="w-full py-4 rounded-2xl text-slate-900 dark:text-white font-bold transition-all shadow-lg flex items-center justify-center gap-2 group mb-2"
+                    style={{ backgroundColor: accentColor, boxShadow: `0 10px 15px -3px ${accentColor}33` }}
                 >
                     <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-                    Record Check-up
+                    Record New Check-up
                 </button>
 
                 <div className="space-y-3">
                     <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1 font-inter">History</h3>
                     {entries?.length === 0 ? (
                         <div className="p-4 rounded-xl bg-white/5 border border-white/5 text-center">
-                            <p className="text-slate-400 text-sm">No check-ups recorded yet</p>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm">No check-ups recorded yet</p>
                         </div>
                     ) : (
                         entries?.map((entry: any) => (
-                            <div key={entry.id} className="rounded-xl bg-slate-800/50 border border-slate-700 overflow-hidden group/entry relative">
+                            <div key={entry.id} className="rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 overflow-hidden group/entry relative">
                                 <div className="absolute top-3 right-3 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/entry:opacity-100 transition-opacity z-10">
                                     <button
                                         onClick={() => onEditEntry(entry)}
-                                        className="p-2 bg-slate-900/80 text-white rounded-full hover:bg-blue-500/80 transition-colors backdrop-blur-sm shadow-lg"
+                                        className="p-2 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-full hover:text-white transition-colors backdrop-blur-sm shadow-lg border border-slate-200 dark:border-slate-700"
+                                        style={{ '--hover-bg': accentColor } as any}
+                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = accentColor; e.currentTarget.style.color = 'white'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = ''; }}
                                     >
                                         <Edit3 className="w-3 h-3" />
                                     </button>
                                     <button
                                         onClick={() => onDeleteEntry(entry.id!)}
-                                        className="p-2 bg-slate-900/80 text-red-500 rounded-full hover:bg-red-500 hover:text-white transition-colors backdrop-blur-sm shadow-lg"
+                                        className="p-2 bg-white dark:bg-slate-900 text-slate-500 rounded-full hover:text-white transition-colors backdrop-blur-sm shadow-lg border border-slate-200 dark:border-slate-700"
+                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = accentColor; e.currentTarget.style.color = 'white'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = ''; }}
                                     >
                                         <Trash2 className="w-3 h-3" />
                                     </button>
@@ -1810,36 +2093,45 @@ function MoleDetailPanel({
                                 )}
                                 <div className="p-4 space-y-2">
                                     <div className="flex justify-between items-start">
-                                        <div className="flex items-center gap-2">
-                                            <Calendar className="w-3 h-3 text-slate-500" />
-                                            <span className="text-xs text-slate-400 font-inter">{new Date(entry.date).toLocaleDateString()}</span>
+                                        <div className="flex-1 space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <Calendar className="w-3 h-3 text-slate-500" />
+                                                <span className="text-xs text-slate-600 dark:text-slate-400 font-inter">{new Date(entry.date).toLocaleDateString()}</span>
 
-                                            {/* ABCDE Badges in History List */}
-                                            {entry.abcde && entry.abcde.length > 0 && (
-                                                <div className="flex gap-1 ml-2">
-                                                    {entry.abcde.map((letter: string) => (
-                                                        <div key={letter} className="w-4 h-4 rounded bg-rose-500/20 text-rose-400 flex items-center justify-center text-[8px] font-black border border-rose-500/20">
-                                                            {letter}
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                                {/* Simplified entry display - focus on mole ABCDE only */}
+                                                {entry.abcde && entry.abcde.length > 0 && (
+                                                    <div className="flex gap-1 ml-2">
+                                                        {entry.abcde.map((letter: string) => (
+                                                            <div
+                                                                key={letter}
+                                                                className="w-5 h-5 rounded-lg flex items-center justify-center text-[8px] font-black border"
+                                                                style={{ backgroundColor: `${accentColor}15`, borderColor: `${accentColor}30`, color: accentColor }}
+                                                            >
+                                                                {letter}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {entry.size > 0 && (
+                                                <span
+                                                    className="px-2.5 py-1 rounded-full text-[10px] font-bold border font-inter shadow-sm"
+                                                    style={{ backgroundColor: `${accentColor}15`, borderColor: `${accentColor}30`, color: accentColor }}
+                                                >
+                                                    {entry.size}mm
+                                                </span>
                                             )}
                                         </div>
-                                        {entry.size > 0 && (
-                                            <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 text-[10px] font-bold border border-rose-500/20 font-inter">
-                                                {entry.size}mm
-                                            </span>
+                                        {entry.texture && (
+                                            <div className="flex gap-2 items-center">
+                                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded font-inter">Texture:</span>
+                                                <span className="text-xs text-slate-600 dark:text-slate-300 font-inter">{entry.texture}</span>
+                                            </div>
+                                        )}
+                                        {entry.notes && (
+                                            <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed border-t border-slate-200 dark:border-white/5 pt-2 mt-2 font-inter">{entry.notes}</p>
                                         )}
                                     </div>
-                                    {entry.texture && (
-                                        <div className="flex gap-2 items-center">
-                                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-800 px-1.5 py-0.5 rounded font-inter">Texture:</span>
-                                            <span className="text-xs text-slate-300 font-inter">{entry.texture}</span>
-                                        </div>
-                                    )}
-                                    {entry.notes && (
-                                        <p className="text-sm text-slate-200 leading-relaxed border-t border-white/5 pt-2 mt-2 font-inter">{entry.notes}</p>
-                                    )}
                                 </div>
                             </div>
                         ))
@@ -1865,6 +2157,7 @@ function ImageOverlay({
 }) {
     const [showComparisonSelector, setShowComparisonSelector] = useState(false);
     const [showABCDEGuide, setShowABCDEGuide] = useState(false);
+    const accentColor = useAppStore((s: AppState) => s.accentColor);
 
     const expandedMoleEntries = useLiveQuery(
         () => expandedMoleId ? db.entries.where('moleId').equals(expandedMoleId).toArray() : [],
@@ -1885,32 +2178,34 @@ function ImageOverlay({
                 <div className="flex items-center gap-2">
                     {otherEntries.length > 0 && (
                         <button
-                            className={`glass px-5 py-2.5 rounded-full font-bold text-xs uppercase tracking-widest transition-all shadow-xl active:scale-95 flex items-center gap-2 ${showComparisonSelector ? 'bg-rose-500/20 border-rose-500/30 text-rose-500' : 'text-white hover:bg-white/5 border border-white/10'}`}
+                            className={`px-5 py-2.5 rounded-full font-bold text-xs uppercase tracking-widest transition-all shadow-xl active:scale-95 flex items-center gap-2 border`}
+                            style={showComparisonSelector ? { backgroundColor: accentColor, borderColor: 'transparent', color: '#000' } : { backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.1)', color: '#fff' }}
                             onClick={(e) => { e.stopPropagation(); setShowComparisonSelector(!showComparisonSelector); setShowABCDEGuide(false); }}
                         >
-                            <ArrowLeftRight className="w-3.5 h-3.5" />
+                            <ArrowLeftRight className="w-4 h-4" />
                             {comparisonImageUrl ? 'Change' : 'Compare'}
                         </button>
                     )}
                     {comparisonImageUrl && (
                         <button
-                            className="glass px-5 py-2.5 rounded-full font-bold text-xs uppercase tracking-widest transition-all text-slate-300 hover:text-white hover:bg-white/5 border border-white/10"
+                            className="bg-white/10 px-5 py-2.5 rounded-full font-bold text-xs uppercase tracking-widest transition-all text-white hover:bg-white/20 border border-white/10"
                             onClick={(e) => { e.stopPropagation(); setComparisonImageUrl(null); }}
                         >
                             Exit
                         </button>
                     )}
                     <button
-                        className={`glass px-5 py-2.5 rounded-full font-bold text-xs uppercase tracking-widest transition-all shadow-xl active:scale-95 flex items-center gap-2 ${showABCDEGuide ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' : 'text-white hover:bg-white/5 border border-white/10'}`}
+                        className={`px-5 py-2.5 rounded-full font-bold text-xs uppercase tracking-widest transition-all shadow-xl active:scale-95 flex items-center gap-2 border`}
+                        style={showABCDEGuide ? { backgroundColor: '#3b82f6', borderColor: 'transparent', color: '#fff' } : { backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.1)', color: '#fff' }}
                         onClick={(e) => { e.stopPropagation(); setShowABCDEGuide(!showABCDEGuide); setShowComparisonSelector(false); }}
                     >
-                        <Info className="w-3.5 h-3.5" />
+                        <Info className="w-4 h-4" />
                         Guide
                     </button>
                 </div>
 
                 <button
-                    className="glass w-11 h-11 rounded-full flex items-center justify-center text-white hover:bg-rose-500/20 hover:text-rose-500 transition-all border border-white/10 shadow-xl"
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-all border border-white/10 shadow-xl bg-white/10"
                     onClick={(e) => { e.stopPropagation(); onClose(); }}
                 >
                     <X className="w-6 h-6" />
@@ -1932,7 +2227,7 @@ function ImageOverlay({
 
                     {/* Primary Labels Overlay */}
                     {comparisonImageUrl && (
-                        <div className="absolute top-6 left-6 glass px-4 py-1.5 rounded-full border border-white/10 text-[10px] font-bold text-white uppercase tracking-widest">
+                        <div className="absolute top-6 left-6 glass px-4 py-1.5 rounded-full border border-white/10 text-[10px] font-bold text-slate-900 dark:text-white uppercase tracking-widest">
                             Primary
                         </div>
                     )}
@@ -1949,7 +2244,10 @@ function ImageOverlay({
                             onClick={(e) => e.stopPropagation()}
                         />
                         <div className="absolute top-6 right-6">
-                            <div className="bg-rose-500/90 glass backdrop-blur-3xl px-4 py-1.5 rounded-full border border-rose-500/30 text-[10px] font-bold text-white uppercase tracking-widest shadow-lg">
+                            <div
+                                className="px-5 py-2 rounded-full border text-[10px] font-bold text-slate-900 dark:text-white uppercase tracking-widest shadow-lg"
+                                style={{ backgroundColor: accentColor, borderColor: 'rgba(255,255,255,0.2)' }}
+                            >
                                 Comparison
                             </div>
                         </div>
@@ -1964,11 +2262,11 @@ function ImageOverlay({
                     onClick={() => setShowABCDEGuide(false)}
                 >
                     <div
-                        className="glass bg-slate-900 border border-white/10 rounded-3xl p-6 max-w-md w-full shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-slide-up"
+                        className="glass bg-white dark:bg-slate-900 border border-white/10 rounded-3xl p-6 max-w-md w-full shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-slide-up"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between mb-6">
-                            <h4 className="text-xl font-bold text-white flex items-center gap-3">
+                            <h4 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
                                     <Info className="w-5 h-5 text-blue-400" />
                                 </div>
@@ -1976,7 +2274,7 @@ function ImageOverlay({
                             </h4>
                             <button
                                 onClick={() => setShowABCDEGuide(false)}
-                                className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+                                className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white rounded-full hover:bg-white/10 transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -1984,19 +2282,25 @@ function ImageOverlay({
 
                         <div className="flex-1 overflow-y-auto space-y-4 font-inter text-left pr-2 -mr-2">
                             {ABCDE_ITEMS.map((item) => (
-                                <div key={item.letter} className="flex gap-4 p-3 rounded-2xl bg-white/5 border border-transparent">
-                                    <div className="w-10 h-10 rounded-xl bg-white/5 flex flex-shrink-0 items-center justify-center text-xl font-black text-rose-500 shadow-inner">
+                                <div key={item.letter} className="flex gap-4 p-4 rounded-3xl bg-slate-100 dark:bg-white/5 border border-transparent">
+                                    <div
+                                        className="w-12 h-12 rounded-2xl flex flex-shrink-0 items-center justify-center text-xl font-black shadow-inner border border-transparent"
+                                        style={{ backgroundColor: `${accentColor}15`, color: accentColor, borderColor: `${accentColor}30` }}
+                                    >
                                         {item.letter}
                                     </div>
                                     <div>
-                                        <p className="font-bold text-white text-sm">{item.title}</p>
-                                        <p className="text-slate-400 text-xs leading-relaxed">{item.desc}</p>
+                                        <p className="font-bold text-slate-900 dark:text-white text-sm">{item.title}</p>
+                                        <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed mt-0.5">{item.desc}</p>
                                     </div>
                                 </div>
                             ))}
 
-                            <div className="pt-4 border-t border-white/5 font-inter">
-                                <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex gap-3 text-rose-200">
+                            <div className="pt-4 border-t border-slate-200 dark:border-white/10 font-inter">
+                                <div
+                                    className="p-4 rounded-2xl border flex gap-3"
+                                    style={{ backgroundColor: `${accentColor}08`, borderColor: `${accentColor}22`, color: accentColor }}
+                                >
                                     <AlertTriangle className="w-5 h-5 flex-shrink-0" />
                                     <p className="text-[10px] uppercase font-bold tracking-wider leading-relaxed">
                                         Self-checks are for tracking only. Consult a doctor for any new or changing spots.
@@ -2007,7 +2311,8 @@ function ImageOverlay({
 
                         <button
                             onClick={() => setShowABCDEGuide(false)}
-                            className="w-full py-4 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-bold transition-all shadow-lg shadow-rose-500/20 mt-6 active:scale-[0.98] text-sm uppercase tracking-widest"
+                            className="w-full py-4 rounded-2xl text-slate-900 dark:text-white font-bold transition-all shadow-lg mt-6 active:scale-[0.98] text-sm uppercase tracking-widest"
+                            style={{ backgroundColor: accentColor, boxShadow: `0 10px 15px -3px ${accentColor}33` }}
                         >
                             Got it
                         </button>
@@ -2038,7 +2343,11 @@ function ImageOverlay({
                                     }}
                                     className="flex-shrink-0 group"
                                 >
-                                    <div className="w-24 h-24 rounded-xl overflow-hidden border border-white/10 group-hover:border-rose-500/50 transition-all relative">
+                                    <div className="w-24 h-24 rounded-xl overflow-hidden border border-white/10 transition-all relative"
+                                        style={{ borderColor: 'transparent' }}
+                                        onMouseEnter={(e) => e.currentTarget.style.borderColor = accentColor}
+                                        onMouseLeave={(e) => e.currentTarget.style.borderColor = 'transparent'}
+                                    >
                                         <img src={entry.photo!} alt="Entry thumbnail" className="w-full h-full object-cover" />
                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                             <Plus className="w-6 h-6 text-white" />

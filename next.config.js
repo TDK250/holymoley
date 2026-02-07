@@ -11,6 +11,10 @@ const nextConfig = {
     env: {
         NEXT_PUBLIC_BASE_PATH: isGithubActions ? '/track-a-mole' : '',
     },
+    webpack: (config) => {
+        config.resolve.alias.canvas = false;
+        return config;
+    },
 };
 
 module.exports = nextConfig;

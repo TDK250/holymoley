@@ -6,7 +6,7 @@ import { X, ChevronRight, Camera, Move, MousePointerClick, ArrowUp, Hand, Pointe
 import { useEffect } from "react";
 
 export default function TutorialOverlay() {
-    const { tutorialStep, setTutorialStep, completeTutorial, isMenuOpen, setIsMenuOpen, hasInteractedWithModel, isAddingMole, menuHeight, selectedMoleId, tempMolePosition } = useAppStore();
+    const { tutorialStep, setTutorialStep, completeTutorial, isMenuOpen, setIsMenuOpen, hasInteractedWithModel, isAddingMole, menuHeight, selectedMoleId, tempMolePosition, accentColor } = useAppStore();
 
     // Reset interaction state when entering spin step (step 2)
     useEffect(() => {
@@ -124,9 +124,8 @@ export default function TutorialOverlay() {
                         <motion.div
                             animate={{ scale: [1, 1.2, 1] }}
                             transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                            className="text-rose-400"
                         >
-                            <MousePointerClick className="w-16 h-16 drop-shadow-lg" />
+                            <MousePointerClick className="w-16 h-16 drop-shadow-lg" style={{ color: accentColor }} />
                         </motion.div>
                     </div>
                 )}
@@ -139,23 +138,23 @@ export default function TutorialOverlay() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -20, scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        className="bg-slate-900/90 border border-white/10 rounded-3xl p-6 shadow-2xl backdrop-blur-xl pointer-events-auto"
+                        className="bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-white/10 rounded-3xl p-6 shadow-2xl backdrop-blur-xl pointer-events-auto transition-colors duration-300"
                     >
                         <div className="flex flex-col items-center text-center space-y-4">
 
                             {/* STEP 1: Welcome */}
                             {tutorialStep === 1 && (
                                 <>
-                                    <div className="w-16 h-16 rounded-full bg-rose-500/20 flex items-center justify-center mb-2">
+                                    <div className="w-16 h-16 rounded-full flex items-center justify-center mb-2" style={{ backgroundColor: `${accentColor}33` }}>
                                         <span className="text-3xl">👋</span>
                                     </div>
-                                    <h3 className="text-xl font-bold text-white">Welcome to Track-A-Mole</h3>
-                                    <p className="text-slate-300 leading-relaxed">
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Welcome to Track-A-Mole</h3>
+                                    <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
                                         Your private, secure companion for tracking skin health over time.
                                     </p>
                                     <div className="flex items-center gap-3 w-full pt-4">
-                                        <button onClick={skipTutorial} className="flex-1 py-3 px-4 rounded-xl text-slate-400 hover:bg-white/5 transition-colors text-sm font-medium">Skip</button>
-                                        <button onClick={nextStep} className="flex-[2] py-3 px-4 rounded-xl bg-white text-slate-900 font-bold hover:bg-slate-200 transition-colors flex items-center justify-center gap-2">
+                                        <button onClick={skipTutorial} className="flex-1 py-3 px-4 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-sm font-medium">Skip</button>
+                                        <button onClick={nextStep} className="flex-[2] py-3 px-4 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors flex items-center justify-center gap-2">
                                             Start Tour <ChevronRight className="w-4 h-4" />
                                         </button>
                                     </div>
@@ -168,8 +167,8 @@ export default function TutorialOverlay() {
                                     <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center mb-2 text-blue-400">
                                         <Move className="w-6 h-6" />
                                     </div>
-                                    <h3 className="text-lg font-bold text-white">Give it a Spin</h3>
-                                    <p className="text-slate-300 text-sm leading-relaxed">
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Give it a Spin</h3>
+                                    <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
                                         Drag on the screen to rotate the 3D model. Pinch to zoom in and out.
                                     </p>
                                     <div className="animate-pulse text-xs text-blue-400 font-bold uppercase tracking-wider mt-2">
@@ -184,9 +183,9 @@ export default function TutorialOverlay() {
                                     <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center mb-2 text-emerald-400">
                                         <MousePointerClick className="w-6 h-6" />
                                     </div>
-                                    <h3 className="text-lg font-bold text-white">Add Your First Mole</h3>
-                                    <p className="text-slate-300 text-sm leading-relaxed">
-                                        Tap the <span className="text-rose-400 font-bold whitespace-nowrap">+ New Mole</span> button below to start tracking a spot.
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Add Your First Mole</h3>
+                                    <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+                                        Tap the <span className="font-bold whitespace-nowrap" style={{ color: accentColor }}>+ New Mole</span> button below to start tracking a spot.
                                     </p>
                                 </>
                             )}
@@ -194,14 +193,14 @@ export default function TutorialOverlay() {
                             {/* STEP 4: Tap on Body */}
                             {tutorialStep === 4 && (
                                 <>
-                                    <div className="w-12 h-12 rounded-full bg-rose-500/20 flex items-center justify-center mb-2 text-rose-400">
+                                    <div className="w-12 h-12 rounded-full flex items-center justify-center mb-2" style={{ backgroundColor: `${accentColor}33`, color: accentColor }}>
                                         <MapPin className="w-6 h-6" />
                                     </div>
-                                    <h3 className="text-lg font-bold text-white">Tap on the Body</h3>
-                                    <p className="text-slate-300 text-sm leading-relaxed">
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Tap on the Body</h3>
+                                    <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
                                         Click directly on the 3D model where your mole is located to place a marker.
                                     </p>
-                                    <div className="animate-pulse text-xs text-rose-400 font-bold uppercase tracking-wider mt-2">
+                                    <div className="animate-pulse text-xs font-bold uppercase tracking-wider mt-2" style={{ color: accentColor }}>
                                         Tap anywhere on the model...
                                     </div>
                                 </>
@@ -213,9 +212,9 @@ export default function TutorialOverlay() {
                                     <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center mb-2 text-amber-400">
                                         <FileText className="w-6 h-6" />
                                     </div>
-                                    <h3 className="text-lg font-bold text-white">Name Your Mole</h3>
-                                    <p className="text-slate-300 text-sm leading-relaxed">
-                                        Give this mole a descriptive name (like "Left Shoulder" or "Back of Leg") and tap <span className="text-rose-400 font-bold">Add Mole</span>.
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Name Your Mole</h3>
+                                    <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+                                        Give this mole a descriptive name (like "Left Shoulder" or "Back of Leg") and tap <span className="font-bold" style={{ color: accentColor }}>Add Mole</span>.
                                     </p>
                                     <div className="animate-pulse text-xs text-amber-400 font-bold uppercase tracking-wider mt-2">
                                         Fill in the form below...
@@ -229,9 +228,9 @@ export default function TutorialOverlay() {
                                     <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center mb-2 text-purple-400">
                                         <Camera className="w-6 h-6" />
                                     </div>
-                                    <h3 className="text-lg font-bold text-white">Record Check-ups</h3>
-                                    <p className="text-slate-300 text-sm leading-relaxed">
-                                        Tap on any mole in your list, then click <span className="text-rose-400 font-bold whitespace-nowrap">+ New Check-up</span> to add photos, measurements, and track changes over time.
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Record Check-ups</h3>
+                                    <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+                                        Tap on any mole in your list, then click <span className="font-bold whitespace-nowrap" style={{ color: accentColor }}>+ Record New Check-up</span> to add photos, measurements, and track changes over time.
                                     </p>
                                 </>
                             )}

@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react';
 import { Lock, Unlock, Delete } from 'lucide-react';
 import { haptics } from '@/utils/haptics';
 
+import { useAppStore, type AppState } from '@/store/appStore';
+
 export default function AppLock({ children }: { children: React.ReactNode }) {
+    const accentColor = useAppStore((state: AppState) => state.accentColor);
     const [isLocked, setIsLocked] = useState(true);
     const [isChecking, setIsChecking] = useState(true);
     const [pin, setPin] = useState("");
@@ -72,14 +75,14 @@ export default function AppLock({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className="fixed inset-0 bg-slate-950 z-[100] flex flex-col items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-50 dark:bg-slate-950 z-[100] flex flex-col items-center justify-center p-4 transition-colors duration-300">
             <div className="w-full max-w-xs flex flex-col items-center">
-                <div className="w-16 h-16 rounded-full bg-rose-500/10 flex items-center justify-center mb-6 text-rose-500 animate-pulse">
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 animate-pulse" style={{ backgroundColor: `${accentColor}15`, color: accentColor }}>
                     <Lock className="w-8 h-8" />
                 </div>
 
-                <h1 className="text-2xl font-bold text-white mb-2">App Locked</h1>
-                <p className="text-slate-400 mb-8 text-sm">Enter your 4-digit PIN to access</p>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">App Locked</h1>
+                <p className="text-slate-600 dark:text-slate-400 mb-8 text-sm">Enter your 4-digit PIN to access</p>
 
                 {/* PIN Dots */}
                 <div className="flex gap-4 mb-8">
@@ -87,9 +90,10 @@ export default function AppLock({ children }: { children: React.ReactNode }) {
                         <div
                             key={i}
                             className={`w-4 h-4 rounded-full transition-all ${i < pin.length
-                                ? (error ? 'bg-red-500' : 'bg-rose-500')
-                                : 'bg-slate-800'
+                                ? (error ? 'bg-red-500' : '')
+                                : 'bg-slate-200 dark:bg-slate-800'
                                 }`}
+                            style={i < pin.length && !error ? { backgroundColor: accentColor } : {}}
                         />
                     ))}
                 </div>
@@ -100,7 +104,12 @@ export default function AppLock({ children }: { children: React.ReactNode }) {
                         <button
                             key={num}
                             onClick={() => handleNumberClick(num)}
-                            className="aspect-square rounded-full bg-slate-900 border border-slate-800 text-white text-xl font-bold hover:bg-slate-800 active:bg-rose-500 active:border-rose-500 transition-all"
+                            className="aspect-square rounded-full bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white text-xl font-bold hover:bg-slate-300 dark:hover:bg-slate-800 active:text-white transition-all"
+                            style={{ '--active-bg': accentColor } as any}
+                            onMouseDown={(e) => (e.currentTarget.style.backgroundColor = accentColor)}
+                            onMouseUp={(e) => (e.currentTarget.style.backgroundColor = '')}
+                            onTouchStart={(e) => (e.currentTarget.style.backgroundColor = accentColor)}
+                            onTouchEnd={(e) => (e.currentTarget.style.backgroundColor = '')}
                         >
                             {num}
                         </button>
@@ -108,13 +117,17 @@ export default function AppLock({ children }: { children: React.ReactNode }) {
                     <div /> {/* Empty slot */}
                     <button
                         onClick={() => handleNumberClick(0)}
-                        className="aspect-square rounded-full bg-slate-900 border border-slate-800 text-white text-xl font-bold hover:bg-slate-800 active:bg-rose-500 active:border-rose-500 transition-all"
+                        className="aspect-square rounded-full bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white text-xl font-bold hover:bg-slate-300 dark:hover:bg-slate-800 active:text-white transition-all"
+                        onMouseDown={(e) => (e.currentTarget.style.backgroundColor = accentColor)}
+                        onMouseUp={(e) => (e.currentTarget.style.backgroundColor = '')}
+                        onTouchStart={(e) => (e.currentTarget.style.backgroundColor = accentColor)}
+                        onTouchEnd={(e) => (e.currentTarget.style.backgroundColor = '')}
                     >
                         0
                     </button>
                     <button
                         onClick={handleDelete}
-                        className="aspect-square rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+                        className="aspect-square rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 dark:text-white hover:bg-slate-800 transition-all"
                     >
                         <Delete className="w-6 h-6" />
                     </button>

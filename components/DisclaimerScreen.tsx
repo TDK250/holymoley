@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { ShieldAlert, Check } from 'lucide-react';
+import { useAppStore, type AppState } from '@/store/appStore';
 
 export default function DisclaimerScreen({ children }: { children: React.ReactNode }) {
     const [hasAccepted, setHasAccepted] = useState(false);
     const [isChecking, setIsChecking] = useState(true);
     const [isChecked, setIsChecked] = useState(false);
+    const accentColor = useAppStore((s: AppState) => s.accentColor);
 
     useEffect(() => {
         // Check if disclaimer has already been accepted
@@ -35,7 +37,7 @@ export default function DisclaimerScreen({ children }: { children: React.ReactNo
     }
 
     return (
-        <div className="fixed inset-0 bg-slate-950 z-[200] flex flex-col items-center justify-center p-6 overflow-y-auto">
+        <div className="fixed inset-0 bg-slate-50 dark:bg-slate-950 z-[200] flex flex-col items-center justify-center p-6 overflow-y-auto transition-colors duration-300">
             <div className="w-full max-w-md flex flex-col items-center">
                 {/* Icon */}
                 <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mb-6 text-amber-500">
@@ -43,45 +45,45 @@ export default function DisclaimerScreen({ children }: { children: React.ReactNo
                 </div>
 
                 {/* Title */}
-                <h1 className="text-2xl font-bold text-white mb-2 text-center">
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 text-center">
                     Important Disclaimer
                 </h1>
-                <p className="text-slate-400 mb-6 text-sm text-center">
+                <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm text-center">
                     Please read and accept before continuing
                 </p>
 
                 {/* Disclaimer Content */}
-                <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 mb-6 text-sm text-slate-300 space-y-4 max-h-[50vh] overflow-y-auto">
+                <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 mb-6 text-sm text-slate-700 dark:text-slate-300 space-y-4 max-h-[50vh] overflow-y-auto">
                     <p>
-                        <strong className="text-white">Track-A-Mole</strong> is a personal tracking tool designed to help you monitor and document skin features over time. By using this application, you acknowledge and agree to the following:
+                        <strong className="text-slate-900 dark:text-white">Track-A-Mole</strong> is a personal tracking tool designed to help you monitor and document skin features over time. By using this application, you acknowledge and agree to the following:
                     </p>
 
                     <div className="space-y-3">
                         <div className="flex gap-3">
                             <span className="text-amber-500 font-bold">1.</span>
                             <p>
-                                <strong className="text-white">Not Medical Advice:</strong> This app is not a medical device and does not provide medical diagnosis, treatment recommendations, or professional health advice.
+                                <strong className="text-slate-900 dark:text-white">Not Medical Advice:</strong> This app is not a medical device and does not provide medical diagnosis, treatment recommendations, or professional health advice.
                             </p>
                         </div>
 
                         <div className="flex gap-3">
                             <span className="text-amber-500 font-bold">2.</span>
                             <p>
-                                <strong className="text-white">Consult Professionals:</strong> Always seek the guidance of a qualified healthcare provider for any skin concerns. Do not delay seeking medical advice based on information from this app.
+                                <strong className="text-slate-900 dark:text-white">Consult Professionals:</strong> Always seek the guidance of a qualified healthcare provider for any skin concerns. Do not delay seeking medical advice based on information from this app.
                             </p>
                         </div>
 
                         <div className="flex gap-3">
                             <span className="text-amber-500 font-bold">3.</span>
                             <p>
-                                <strong className="text-white">User Responsibility:</strong> You are solely responsible for any health decisions you make. The creators of this app are not liable for any actions taken based on its use.
+                                <strong className="text-slate-900 dark:text-white">User Responsibility:</strong> You are solely responsible for any health decisions you make. The creators of this app are not liable for any actions taken based on its use.
                             </p>
                         </div>
 
                         <div className="flex gap-3">
                             <span className="text-amber-500 font-bold">4.</span>
                             <p>
-                                <strong className="text-white">No Warranty:</strong> This app is provided "as is" without warranties of any kind, express or implied. The creators disclaim all liability for any damages arising from use of this application.
+                                <strong className="text-slate-900 dark:text-white">No Warranty:</strong> This app is provided "as is" without warranties of any kind, express or implied. The creators disclaim all liability for any damages arising from use of this application.
                             </p>
                         </div>
                     </div>
@@ -92,14 +94,15 @@ export default function DisclaimerScreen({ children }: { children: React.ReactNo
                     <div
                         className={`w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all mt-0.5
                             ${isChecked
-                                ? 'bg-rose-500 border-rose-500'
-                                : 'border-slate-600 group-hover:border-slate-500'
+                                ? 'border-transparent'
+                                : 'border-slate-400 dark:border-slate-600 group-hover:border-slate-500'
                             }`}
+                        style={isChecked ? { backgroundColor: accentColor } : {}}
                         onClick={() => setIsChecked(!isChecked)}
                     >
                         {isChecked && <Check className="w-4 h-4 text-white" />}
                     </div>
-                    <span className="text-slate-300 text-sm leading-relaxed">
+                    <span className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
                         I have read and understood this disclaimer. I agree that this app is for personal tracking only and is not a substitute for professional medical advice.
                     </span>
                 </label>
@@ -108,11 +111,12 @@ export default function DisclaimerScreen({ children }: { children: React.ReactNo
                 <button
                     onClick={handleAccept}
                     disabled={!isChecked}
-                    className={`w-full py-4 rounded-xl font-semibold text-white transition-all
+                    className={`w-full py-4 rounded-xl font-semibold transition-all
                         ${isChecked
-                            ? 'bg-rose-500 hover:bg-rose-600 active:scale-[0.98]'
-                            : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                            ? 'text-white hover:opacity-90 active:scale-[0.98] shadow-lg'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none'
                         }`}
+                    style={isChecked ? { backgroundColor: accentColor, boxShadow: `0 10px 15px -3px ${accentColor}33` } : {}}
                 >
                     I Understand & Accept
                 </button>

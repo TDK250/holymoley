@@ -45,16 +45,32 @@ export interface AppState {
     completeTutorial: () => void;
     hasInteractedWithModel: boolean;
     setHasInteractedWithModel: (has: boolean) => void;
+    theme: 'light' | 'dark';
+    setTheme: (theme: 'light' | 'dark') => void;
+    accentColor: string;
+    setAccentColor: (color: string) => void;
+    filterCondition: string | 'all';
+    setFilterCondition: (condition: string | 'all') => void;
+
+    // Screenshot State
+    screenshotQueue: number[];
+    addToScreenshotQueue: (ids: number[]) => void;
+    popScreenshotQueue: () => void;
+    screenshotMap: Record<number, string>;
+    saveScreenshot: (id: number, dataUrl: string) => void;
+    clearScreenshots: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => {
     // Load from localStorage if available
     const isClient = typeof window !== 'undefined';
     const savedGender = isClient ? localStorage.getItem('gender-value') as 'male' | 'female' | null : null;
-    const savedSmartReminders = isClient ? localStorage.getItem('smart-reminders-enabled') !== 'false' : true; // Default true
+    const savedSmartReminders = isClient ? localStorage.getItem('smart-reminders-enabled') === 'true' : false; // Default false
     const hasCompletedTutorial = isClient ? localStorage.getItem('tutorial-completed') === 'true' : false;
     const savedSortMode = isClient ? localStorage.getItem('sort-mode') as 'updated' | 'label' | null : null;
     const savedSortDirection = isClient ? localStorage.getItem('sort-direction') as 'asc' | 'desc' | null : null;
+    const savedTheme = isClient ? localStorage.getItem('app-theme') as 'light' | 'dark' | 'system' | null : null;
+    const savedAccentColor = isClient ? localStorage.getItem('app-accent-color') : null;
 
     return {
         gender: savedGender || 'male',
@@ -115,6 +131,30 @@ export const useAppStore = create<AppState>((set) => {
         setSortDirection: (direction) => {
             set({ sortDirection: direction });
             if (isClient) localStorage.setItem('sort-direction', direction);
-        }
+        },
+        // Theme
+        theme: (savedTheme === 'system' ? 'light' : savedTheme) || 'light',
+        setTheme: (theme) => {
+            set({ theme });
+            if (isClient) localStorage.setItem('app-theme', theme);
+        },
+        accentColor: savedAccentColor || '#3b82f6',
+        setAccentColor: (color) => {
+            set({ accentColor: color });
+            if (isClient) {
+                localStorage.setItem('app-accent-color', color);
+                document.documentElement.style.setProperty('--accent-color', color);
+            }
+        },
+        filterCondition: 'all',
+        setFilterCondition: (condition) => set({ filterCondition: condition }),
+
+        // Screenshot State
+        screenshotQueue: [],
+        addToScreenshotQueue: (ids) => set((state) => ({ screenshotQueue: [...state.screenshotQueue, ...ids] })),
+        popScreenshotQueue: () => set((state) => ({ screenshotQueue: state.screenshotQueue.slice(1) })),
+        screenshotMap: {},
+        saveScreenshot: (id, dataUrl) => set((state) => ({ screenshotMap: { ...state.screenshotMap, [id]: dataUrl } })),
+        clearScreenshots: () => set({ screenshotQueue: [], screenshotMap: {} }),
     };
 });
